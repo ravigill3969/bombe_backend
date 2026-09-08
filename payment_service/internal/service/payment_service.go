@@ -41,7 +41,7 @@ func (p *PaymentService) CreateCheckoutSession(ctx context.Context, params model
 	sc := stripe.NewClient(stripeKey)
 
 	stripeParams := &stripe.CheckoutSessionCreateParams{
-		SuccessURL: stripe.String(fmt.Sprintf("%s/rider/rider-active-trip?session_id={CHECKOUT_SESSION_ID}", riderFrontendURL)),
+		SuccessURL: stripe.String(fmt.Sprintf("%s/rider/", riderFrontendURL)),
 		CancelURL:  stripe.String(fmt.Sprintf("%s/cancel", riderFrontendURL)),
 		LineItems: []*stripe.CheckoutSessionCreateLineItemParams{
 			{

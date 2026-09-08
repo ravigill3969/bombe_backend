@@ -35,12 +35,16 @@ func (p *PaymentHandler) CreateCheckOutSession(w http.ResponseWriter, r *http.Re
 
 	riderId, ok := r.Context().Value(rider_middleware.ClaimsContextKey).(string)
 
+	fmt.Println("rideris", riderId)
 	if !ok {
 		fmt.Println("error: unauthorized rider context in CreateCheckOutSession")
 		utils.RespondWithError(w, "Unauthorized rider context", http.StatusUnauthorized)
 		return
 	}
 	internalToken, err := utils.CreateToken(riderId, utils.RoleRider, 1*time.Minute, "payment-grpc-service")
+
+	fmt.Println("creating token error")
+	
 	if err != nil {
 		fmt.Println("error creating internal token for payment-grpc-service:", err)
 		utils.RespondWithError(w, "Internal server error", http.StatusInternalServerError)
