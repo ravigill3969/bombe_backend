@@ -109,6 +109,7 @@ func main() {
 		log.Fatalf("error starting server %s", err)
 	}
 }
+
 func EnableCorsWithCredentials(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
