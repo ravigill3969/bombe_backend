@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package trip.v1;
+
+option go_package = "./pb";
+
+message GeoLocation {
+  double latitude = 1;
+  double longitude = 2;
+  string address = 3;
+}
+
+message FareDetails {
+  int64 amount_in_cents = 1;
+  string currency = 2;
+}
+
+message AcceptTripDriverRequest {
+  string trip_id = 1;
+  string rider_id = 3;
+}
+
+message AcceptTripDriverResponse {
+  string trip_id = 1;
+  string status = 3;
+  string message = 4;
+}
+
+message RideDetails {
+  int64 duration_seconds = 1;
+  int64 distance_metrs = 2;
+  string status = 3;
+}
+
+message GetActiveTripRequest {}
+
+message GetActiveTripResponse {
+  GeoLocation pickup = 1;
+  GeoLocation dropoff = 2;
+  RideDetails ride_details = 3;
+  float driver_fare = 4;
+  string rider_id = 5;
+  string trip_id = 6;
+}
+
+message CancelTripRequest {
+  string trip_id = 1;
+  string reason = 2;
+  string driver_id = 3;
+  string rider_id = 4;
+}
+
+message CancelTripResponse {
+    string message = 1;
+    string trip_id = 2;
+    bool is_success = 3;
+}
+
+message RiderPickedUpRequest {
+  string trip_id = 1;
+}
+
+message RiderPickedUpResponse {
+  string message = 1;
+  string trip_id = 2;
+  bool is_success = 3;
+}
+
+message TripCompletedRequest {
+  string trip_id = 1;
+}
+
+message TripCompletedResponse {
+  string message = 1;
+  string trip_id = 2;
+  bool is_success = 3;
+}
+
+message GetActiveTripRiderRequest {}
+
+message GetActiveTripRiderResponse {
+  GeoLocation pickup = 1;
+  GeoLocation dropoff = 2;
+  RideDetails ride_details = 3;
+  float driver_fare = 4;
+  string rider_id = 5;
+  string trip_id = 6;
+}
+
+service TripService {
+  rpc AcceptTripDriver(AcceptTripDriverRequest) returns (AcceptTripDriverResponse);
+  rpc GetActiveTrip(GetActiveTripRequest) returns (GetActiveTripResponse);
+  rpc CancelTrip(CancelTripRequest) returns (CancelTripResponse);
+  rpc RiderPickedUp(RiderPickedUpRequest) returns (RiderPickedUpResponse);
+  rpc TripCompleted(TripCompletedRequest) returns (TripCompletedResponse);
+  rpc GetActiveTripRider(GetActiveTripRiderRequest) returns (GetActiveTripRiderResponse);
+}

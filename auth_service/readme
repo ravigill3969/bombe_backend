@@ -1,0 +1,28 @@
+my-grpc-service/
+├── api/
+│   └── proto/
+│       └── v1/
+│           ├── auth.proto         # Protocol buffer definitions
+│           └── user.proto
+├── cmd/
+│   └── server/
+│       └── main.go                # Application entry point (initializes gRPC server)
+├── internal/
+│   ├── config/
+│   │   └── config.go              # Environment variables and config loading
+│   ├── repository/
+│   │   └── user_db.go             # Database interactions (SQL, Mongo, etc.)
+│   ├── service/
+│   │   └── auth_logic.go          # Core business logic (framework agnostic)
+│   └── transport/
+│       └── grpc/
+│           ├── handler.go         # Implements the generated gRPC server interface
+│           └── middleware.go      # gRPC interceptors (logging, auth, metrics)
+├── pkg/
+│   └── pb/
+│       └── v1/                    # Generated Go code from protoc compiled files
+│           ├── auth.pb.go
+│           └── auth_grpc.pb.go
+├── go.mod
+├── go.sum
+└── Makefile                       # Contains commands like 'make proto' to compile protobufs

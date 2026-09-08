@@ -1,0 +1,179 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "./pb";
+
+message RiderLoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message RiderAuthResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  bool success = 3;
+  int32 status_code = 4;
+  string message = 5;
+}
+
+message RiderRegisterRequest {
+  string firstname = 1;
+  string lastname = 2;
+  string email = 3;
+  string password = 4;
+  string phone_number = 5;
+  string image_url = 6;
+  string home_address = 7;
+  string work_address = 8;
+}
+
+message GetRiderInfoRequest {}
+
+message GetRiderInfoResponse {
+  string firstname = 1;
+  string lastname = 2;
+  string email = 3;
+  string phone_number = 4;
+  string image_url = 5;
+  double rating = 6;
+  bool success = 7;
+  int32 status_code = 8;
+  string message = 9;
+  string rider_id = 10;
+}
+
+message LogoutRiderRequest {}
+
+message LogoutRiderResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  bool success = 3;
+  int32 status_code = 4;
+  string message = 5;
+}
+
+service RiderAuthService {
+  rpc RegisterRider(RiderRegisterRequest) returns (RiderAuthResponse);
+  rpc LoginRider(RiderLoginRequest) returns (RiderAuthResponse);
+
+  rpc GetRiderInfo(GetRiderInfoRequest) returns (GetRiderInfoResponse);
+
+  rpc LogoutRider(LogoutRiderRequest) returns (LogoutRiderResponse);
+}
+
+///////////////////////////////////////////
+///////////////////////////////////////////
+///////////////////////////////////////////
+///////////////////////////////////////////
+///////////////////////////////////////////
+
+message DriverInfo {
+  string firstname = 1;
+  string lastname = 2;
+  string email = 3;
+  string password = 4;
+  string phone_number = 5;
+  string license_no = 6;
+  string image_url = 7;
+}
+
+message VehicleInfo {
+  string carname = 1;
+  string brand = 2;
+  string model = 3;
+  string make = 4;
+  int32 year = 5;
+  string color = 6;
+  string car_plate = 7;
+  string insurance_policy_no = 8;
+}
+
+message DriverRegisterRequest {
+  DriverInfo driver_info = 1;
+  VehicleInfo car_info = 2;
+}
+
+message DriverAuthResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  bool success = 3;
+  int32 status_code = 4;
+  string message = 5;
+}
+
+message DriverLoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message GetDriverInfoRequest {}
+
+message GetDriverInfoResponse {
+  string firstname = 1;
+  string lastname = 2;
+  string email = 3;
+  string phone_number = 5;
+  string license_no = 6;
+  string image_url = 7;
+  double rating = 8;
+  bool success = 9;
+  int32 status_code = 10;
+  string message = 11;
+  string driver_id = 12;
+}
+
+message LogoutDriverRequest {}
+
+message LogoutDriverResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  bool success = 3;
+  int32 status_code = 4;
+  string message = 5;
+}
+
+message GetDriverCarInfoRequest {}
+
+message GetDriverCarInfoResponse {
+  string vehicle_id = 1;
+  string carname = 2;
+  string brand = 3;
+  string model = 4;
+  string make = 5;
+  int32 year = 6;
+  string coloe = 7;
+  string car_plate = 8;
+  string insurance_policy_no = 9;
+  bool is_verified = 10;
+}
+
+service DriverAuthService {
+  rpc LoginDriver(DriverLoginRequest) returns (DriverAuthResponse);
+  rpc RegisterDriver(DriverRegisterRequest) returns (DriverAuthResponse);
+
+  rpc GetDriverInfo(GetDriverInfoRequest) returns (GetDriverInfoResponse);
+  rpc GetDriverCarInfo(GetDriverCarInfoRequest) returns (GetDriverCarInfoResponse);
+
+  rpc LogoutDriver(LogoutDriverRequest) returns (LogoutDriverResponse);
+}
+
+/////////////////////////////////////
+/////////////////////////////////////
+/////////////////////////////////////
+/////////////////////////////////////
+/////////////////////////////////////
+//
+message CheckHealthRequest {
+  string service_name = 1;
+}
+
+message CheckHealthRespone {
+  bool success = 3;
+  int32 status_code = 4;
+  string message = 5;
+}
+
+service HealthCheckService {
+  rpc CheckHealth(CheckHealthRequest) returns (CheckHealthRespone);
+}

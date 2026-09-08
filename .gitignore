@@ -1,0 +1,21 @@
+# Environment variables / secrets
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Go
+**/bin/
+*.exe
+*.out
+
+# Logs
+*.log
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
+
+# Docker
+docker-compose.override.yml

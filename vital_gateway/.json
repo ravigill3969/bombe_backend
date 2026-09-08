@@ -1,0 +1,152 @@
+{
+  "api_version": "2026-08-26.dahlia",
+  "created": 1787919609,
+  "data": {
+    "object": {
+      "id": "cs_test_a1SrbOYETDC98p7RrfpkRY2yhg4YfdsvwkYRNLT54EMhQAOwfdaxFVQmbK",
+      "object": "checkout.session",
+      "adaptive_pricing": {
+        "enabled": true
+      },
+      "after_expiration": null,
+      "allow_promotion_codes": null,
+      "amount_subtotal": 970,
+      "amount_total": 970,
+      "automatic_tax": {
+        "enabled": false,
+        "liability": null,
+        "provider": null,
+        "status": null
+      },
+      "billing_address_collection": null,
+      "branding_settings": {
+        "background_color": "#ffffff",
+        "border_style": "rounded",
+        "button_color": "#0074d4",
+        "display_name": "loop sandbox",
+        "font_family": "default",
+        "icon": null,
+        "logo": null
+      },
+      "cancel_url": "http://localhost:5173/cancel",
+      "client_reference_id": null,
+      "client_secret": null,
+      "collected_information": null,
+      "consent": null,
+      "consent_collection": null,
+      "created": 1787919596,
+      "currency": "usd",
+      "currency_conversion": null,
+      "custom_fields": [],
+      "custom_text": {
+        "after_submit": null,
+        "shipping_address": null,
+        "submit": null,
+        "terms_of_service_acceptance": null
+      },
+      "customer": null,
+      "customer_account": null,
+      "customer_creation": "if_required",
+      "customer_details": {
+        "address": {
+          "city": null,
+          "country": "CA",
+          "line1": null,
+          "line2": null,
+          "postal_code": null,
+          "state": null
+        },
+        "business_name": null,
+        "email": "gill1122ravi@gmail.com",
+        "individual_name": null,
+        "name": "Unknows Ravisher singh",
+        "phone": null,
+        "tax_exempt": "none",
+        "tax_ids": []
+      },
+      "customer_email": null,
+      "discounts": [],
+      "expires_at": 1788005996,
+      "integration_identifier": null,
+      "invoice": null,
+      "invoice_creation": {
+        "enabled": false,
+        "invoice_data": {
+          "account_tax_ids": null,
+          "custom_fields": null,
+          "description": null,
+          "footer": null,
+          "issuer": null,
+          "metadata": {},
+          "rendering_options": null
+        }
+      },
+      "livemode": false,
+      "locale": null,
+      "managed_payments": {
+        "enabled": false
+      },
+      "metadata": {
+        "pickup_lat": "43.906428",
+        "dropoff_lng": "-78.941172",
+        "service_type": "ECONOMY",
+        "dropoff_lat": "43.900662",
+        "dropoff_location": "3060 Garden Street, Whitby, Ontario L1R 0N6, Canada",
+        "pickup_location": "Current Drive, Richmond Hill, Ontario L4S 0M7, Canada",
+        "pickup_lng": "-79.415099",
+        "amount": "970",
+        "rider_id": "dbd15702-659f-4920-90ae-334626ce6caa"
+      },
+      "mode": "payment",
+      "origin_context": null,
+      "payment_intent": "pi_3U9OlQE23dXtYOxd0u44j4Eq",
+      "payment_link": null,
+      "payment_method_collection": "if_required",
+      "payment_method_configuration_details": {
+        "id": "pmc_1T1F9DE23dXtYOxdDchIsZwc",
+        "parent": null
+      },
+      "payment_method_options": {
+        "card": {
+          "request_three_d_secure": "automatic"
+        }
+      },
+      "payment_method_types": [
+        "card",
+        "link"
+      ],
+      "payment_status": "paid",
+      "permissions": null,
+      "phone_number_collection": {
+        "enabled": false
+      },
+      "recovered_from": null,
+      "saved_payment_method_options": null,
+      "setup_intent": null,
+      "shipping_address_collection": null,
+      "shipping_cost": null,
+      "shipping_options": [],
+      "status": "complete",
+      "submit_type": null,
+      "subscription": null,
+      "success_url": "http://localhost:5173/rider/success?session_id={CHECKOUT_SESSION_ID}",
+      "total_details": {
+        "amount_discount": 0,
+        "amount_shipping": 0,
+        "amount_tax": 0
+      },
+      "ui_mode": "hosted_page",
+      "url": null,
+      "wallet_options": null
+    }
+  },
+  "id": "evt_1U9OlRE23dXtYOxdYTNoApjx",
+  "livemode": false,
+  "object": "event",
+  "pending_webhooks": 2,
+  "request": {
+    "id": "",
+    "idempotency_key": ""
+  },
+  "type": "checkout.session.completed"
+}

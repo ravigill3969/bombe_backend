@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package payment;
+
+option go_package = "./pb";
+
+message GeoLocation {
+  double latitude = 1;
+  double longitude = 2;
+  string address = 3;
+}
+
+enum ServiceType {
+  SERVICE_TYPE_UNSPECIFIED = 0;
+  SERVICE_TYPE_ECONOMY = 1;
+  SERVICE_TYPE_COMFORT = 2;
+  SERVICE_TYPE_XL = 3;
+}
+
+message FareDetails {
+  int64 amount_in_cents = 1;
+  string currency = 2;
+}
+
+message RideDetails {
+  int64 duration_seconds = 1;
+  int64 distance_metrs = 2;
+}
+
+message CreateCheckoutSessionRequest {
+  RideDetails ride_details = 1;
+  ServiceType service_type = 2;
+  GeoLocation pickup = 3;
+  GeoLocation dropoff = 4;
+  FareDetails fare = 5;
+}
+
+message CreateCheckoutSessionResponse {
+  string checkout_url = 1;
+  string stripe_session_id = 2;
+  string temporary_ride_id = 3;
+}
+
+message PaymentSuccessRequest {
+  FareDetails fare = 1;
+  string rider_id = 2;
+  GeoLocation pickup = 3;
+  GeoLocation dropoff = 4;
+  string temp_ride_id = 5;
+  RideDetails ride_details = 6;
+}
+
+message PaymentSuccessResponse {}
+
+message PaymentFailedRequest {
+  FareDetails fare = 1;
+  ServiceType service_type = 2;
+  GeoLocation pickup = 3;
+  GeoLocation dropoff = 4;
+}
+
+message PaymentFailedResponse {}
+
+service PaymentService {
+  rpc CreateCheckoutSession(CreateCheckoutSessionRequest) returns (CreateCheckoutSessionResponse);
+  rpc PaymentSuccess(PaymentSuccessRequest) returns (PaymentSuccessResponse);
+  rpc PaymentFailed(PaymentFailedRequest) returns (PaymentFailedResponse);
+}
+
+/////////////////////////////////////////
+/////////////////////////////////////////
+/////////////////////////////////////////
+/////////////////////////////////////////
+/////////////////////////////////////////
+
+message HealthCheckRequest {
+  string service_name = 1;
+}
+
+message HealthCheckResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+    SERVICE_UNKNOWN = 3;
+  }
+  ServingStatus status = 1;
+}
+
+service HealthCheckService {
+  rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+}
