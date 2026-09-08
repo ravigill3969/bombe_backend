@@ -101,7 +101,7 @@ func (d *AuthHandler) LoginDriver(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   3600 * 24 * 7,
 		HttpOnly: true,
 		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteNoneMode,
 	}
 
 	http.SetCookie(w, &access_cookie)
