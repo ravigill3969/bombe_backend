@@ -114,6 +114,8 @@ func EnableCorsWithCredentials(next http.Handler) http.Handler {
 		origin := r.Header.Get("Origin")
 
 		allowedOrigins := map[string]bool{
+			"https://booombe.com":       true,
+			"https://www.booombe.com":   true,
 			"https://iloverher.com":     true,
 			"https://www.iloverher.com": true,
 			"http://localhost:5173":     true,
