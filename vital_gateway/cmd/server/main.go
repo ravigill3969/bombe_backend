@@ -29,7 +29,7 @@ import (
 
 func main() {
 
-	_= godotenv.Load()
+	_ = godotenv.Load()
 	// if err != nil {
 	// 	log.Fatalf("Error loading env: %v", err)
 	// }
@@ -99,7 +99,6 @@ func main() {
 	mux.HandleFunc("/ws", wsHandler.WSHandler)
 	fmt.Println("Starting server on PORT=", PORT)
 
-
 	//starting channel here
 	go trip.ReadMessagesStoredInChannel()
 	go trip.StartListeningToSQS()
@@ -115,8 +114,9 @@ func EnableCorsWithCredentials(next http.Handler) http.Handler {
 		origin := r.Header.Get("Origin")
 
 		allowedOrigins := map[string]bool{
-			"https://iloverher.com":      true,
+			"https://iloverher.com":     true,
 			"https://www.iloverher.com": true,
+			"http://localhost:5173":     true,
 		}
 
 		if allowedOrigins[origin] {
