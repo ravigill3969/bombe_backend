@@ -10,17 +10,20 @@ import (
 
 func Connect_to_db() *sql.DB {
 
-	host := os.Getenv("DB_HOST")
-	user := os.Getenv("DB_USER")
-	port := os.Getenv("DB_PORT")
-	dbname := os.Getenv("DB_NAME")
-	password := os.Getenv("DB_PASSWORD")
+	// host := os.Getenv("DB_HOST")
+	// user := os.Getenv("DB_USER")
+	// port := os.Getenv("DB_PORT")
+	// dbname := os.Getenv("DB_NAME")
+	// password := os.Getenv("DB_PASSWORD")
 
-	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+	// psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
+	// 	"password=%s dbname=%s sslmode=disable",
+	// 	host, port, user, password, dbname)
 
-	db, err := sql.Open("postgres", psqlInfo)
+	db_url := os.Getenv("DATABASE_URL")
+
+	db, err := sql.Open("postgres", db_url)
+	
 	if err != nil {
 		panic(err)
 	}
@@ -34,7 +37,6 @@ func Connect_to_db() *sql.DB {
 
 	return db
 }
-
 
 //status
 //driver_id
