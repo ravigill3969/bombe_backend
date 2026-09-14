@@ -169,7 +169,7 @@ func createToken(rider_id uuid.UUID, day time.Duration, secret string) (string, 
 	return tokenString, nil
 }
 
-func (d *RiderAuthService) UpdateDriverPasswordService(ctx context.Context, curr_password string, new_password string, rider_id string) error {
+func (d *RiderAuthService) UpdateRiderPasswordService(ctx context.Context, curr_password string, new_password string, rider_id string) error {
 	err := d.riderAuthRepo.UpdatePassword(ctx, rider_id, new_password, curr_password)
 
 	if err != nil{

@@ -348,7 +348,9 @@ func (d *DriverAuthRepo) UpdatePassword(ctx context.Context, driverid string, ne
 		return status.Error(codes.Internal, "Internal server error")
 	}
 
+
 	isMatch := utils.CheckPasswordHash(cur_password, passoword_hash)
+
 
 	if !isMatch {
 		return status.Error(codes.Unauthenticated, "Unauthenticated")
@@ -363,7 +365,7 @@ func (d *DriverAuthRepo) UpdatePassword(ctx context.Context, driverid string, ne
 
 	query = `
 	UPDATE driver_info
-	SET password_hash = $1
+	SET password_hash = $1,
 		updated_at = NOW()
 	WHERE driver_id = $2
  	`

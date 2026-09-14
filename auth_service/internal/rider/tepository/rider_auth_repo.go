@@ -222,7 +222,7 @@ func (r *RiderAuthRepo) GetRiderInfoRepo(ctx context.Context, rider_id string) G
 
 
 func (d *RiderAuthRepo) UpdatePassword(ctx context.Context, riderId string, newPassword string, cur_password string) error {
-	query := `SELECT password_hash FROM driver_info WHERE rider_info = $1`
+	query := `SELECT password_hash FROM rider_info WHERE rider_id = $1`
 
 	var passoword_hash string
 
@@ -248,7 +248,7 @@ func (d *RiderAuthRepo) UpdatePassword(ctx context.Context, riderId string, newP
 
 	query = `
 	UPDATE rider_info
-	SET password_hash = $1
+	SET password_hash = $1,
 		updated_at = NOW()
 	WHERE rider_id = $2
  	`

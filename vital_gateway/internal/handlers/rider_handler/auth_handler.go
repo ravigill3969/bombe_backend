@@ -2,7 +2,6 @@ package rider_handler
 
 import (
 	"auth_service/proto/pb"
-	"bombe_main_server/internal/middleware/driver_middleware"
 	"bombe_main_server/internal/middleware/rider_middleware"
 	"bombe_main_server/internal/utils"
 	"encoding/json"
@@ -157,7 +156,7 @@ func (d *AuthHandler) LogoutRider(w http.ResponseWriter, r *http.Request) {
 	riderId, ok := r.Context().Value(rider_middleware.ClaimsContextKey).(string)
 
 	if !ok {
-		utils.RespondWithError(w, "Unauthorized driver context", http.StatusUnauthorized)
+		utils.RespondWithError(w, "Unauthorized rider context", http.StatusUnauthorized)
 		return
 	}
 
@@ -193,7 +192,7 @@ func (d *AuthHandler) LogoutRider(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *AuthHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
-	riderId, ok := r.Context().Value(driver_middleware.ClaimsContextKey).(string)
+	riderId, ok := r.Context().Value(rider_middleware.ClaimsContextKey).(string)
 
 	if !ok {
 		utils.RespondWithError(w, "Unauthorized rider context", http.StatusUnauthorized)

@@ -230,6 +230,7 @@ func (d *AuthHandler) GetDriverCarInfoo(w http.ResponseWriter, r *http.Request) 
 func (d *AuthHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 	driverID, ok := r.Context().Value(driver_middleware.ClaimsContextKey).(string)
 
+
 	if !ok {
 		utils.RespondWithError(w, "Unauthorized driver context", http.StatusUnauthorized)
 		return
@@ -241,6 +242,8 @@ func (d *AuthHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+
+	
 	md := metadata.Pairs("authorization", "Bearer "+internalToken)
 	ctx := metadata.NewOutgoingContext(r.Context(), md)
 
