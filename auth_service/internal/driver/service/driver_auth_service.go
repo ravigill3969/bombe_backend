@@ -190,3 +190,13 @@ func createToken(driver_id uuid.UUID, day time.Duration, secret string) (string,
 
 	return tokenString, nil
 }
+
+func (d *DriverAuthService) UpdateDriverPasswordService(ctx context.Context, curr_password string, new_password string, driver_id string) error {
+	err := d.driverAuthRepo.UpdatePassword(ctx, driver_id, new_password, curr_password)
+
+	if err != nil{
+		return  err
+	}
+
+	return nil
+}

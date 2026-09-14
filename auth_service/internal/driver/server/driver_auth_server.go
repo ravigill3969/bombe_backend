@@ -103,3 +103,27 @@ func (s *DriverAuthServer) GetDriverCarInfo(ctx context.Context, req *pb.GetDriv
 
 	return s.driverAuthService.GetDriverCarInfoService(ctx, driver_id)
 }
+
+func (s *DriverAuthServer) UpdatePasswordDriver(ctx context.Context, req *pb.UpdatePasswordDriverRequest) (*pb.UpdatePasswordDriverResponse, error) {
+	driver_id, ok := ctx.Value(middleware.Driver_id).(string)
+
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "Unauthorized")
+	}
+
+	if req.GetConfirmNewPassword() != req.GetNewPassword() {
+		return nil, status.Error(codes.InvalidArgument, "New password doesnot match")
+	}
+
+	err := s.driverAuthService.UpdateDriverPasswordService(ctx, req.GetCurrentPassword(), req.GetNewPassword(), driver_id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.UpdatePasswordDriverResponse{
+		Message:   "Password updated successfully",
+		IsSuccess: true,
+	}, nil
+
+}

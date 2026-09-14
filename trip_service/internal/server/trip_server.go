@@ -63,6 +63,10 @@ func (t *TripServer) GetActiveTrip(ctx context.Context, req *pb.GetActiveTripReq
 		return nil, err
 	}
 
+	if trip == nil {
+		return &pb.GetActiveTripResponse{}, nil
+	}
+
 	resp := &pb.GetActiveTripResponse{
 		Pickup: &pb.GeoLocation{
 			Latitude:  trip.PickupLatitude,
@@ -110,27 +114,20 @@ func (t *TripServer) RiderPickedUp(ctx context.Context, req *pb.RiderPickedUpReq
 	}, nil
 }
 
-// func (t *TripServer)CancelTrip(ctx context.Context , req *pb.CancelTripByDriverRequest)(*pb.CancelTripResponse, error){
-// 	driverID, ok := ctx.Value(middleware.Driver_id).(string)
-// 	if !ok || driverID == "" {
-// 		return nil, status.Error(codes.Unauthenticated, "Unauthorized")
-// 	}
-// 	if req.() == "" {
-// 		status.Error(codes.InvalidArgument, "trip id is required")
-// 	}
-
-// }
-
 func (t *TripServer) TripCompleted(ctx context.Context, req *pb.TripCompletedRequest) (*pb.TripCompletedResponse, error) {
 	driverID, ok := ctx.Value(middleware.Driver_id).(string)
 	if !ok || driverID == "" {
 		return nil, status.Error(codes.Unauthenticated, "Unauthorized")
 	}
 	if req.GetTripId() == "" {
-		status.Error(codes.InvalidArgument, "trip id is required")
+		return nil, status.Error(codes.InvalidArgument, "trip id is required")
 	}
 
-	err := t.tripService.TripCompletedService(ctx, req.GetTripId(), driverID)
+	if req.GetRiderId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "rider id is required")
+	}
+
+	err := t.tripService.TripCompletedService(ctx, req.GetTripId(), driverID, req.GetRiderId())
 
 	if err != nil {
 		return nil, err
@@ -157,6 +154,10 @@ func (t *TripServer) GetActiveTripRider(ctx context.Context, req *pb.GetActiveTr
 		return nil, err
 	}
 
+	if trip == nil {
+		return &pb.GetActiveTripRiderResponse{}, nil
+	}
+	
 	resp := &pb.GetActiveTripRiderResponse{
 		Pickup: &pb.GeoLocation{
 			Latitude:  trip.PickupLatitude,
@@ -215,5 +216,26 @@ func (t *TripServer) CancelTrip(ctx context.Context, req *pb.CancelTripRequest) 
 		Message:   "Success",
 		TripId:    req.TripId,
 		IsSuccess: true,
+	}, nil
+}
+
+func (t *TripServer) TotalEarningToday(
+	ctx context.Context,
+	req *pb.TotalEarningTodayRequest,
+) (*pb.TotalEarningTodayResponse, error) {
+	driverID, ok := ctx.Value(middleware.Driver_id).(string)
+	if !ok || driverID == "" {
+		return nil, status.Error(codes.Unauthenticated, "Unauthorized")
+	}
+
+	earnings, trips, err := t.tripService.TotalEarningsTodayService(ctx, driverID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.TotalEarningTodayResponse{
+		TotalEarningToday: earnings,
+		TotalTripsToday:   trips,
 	}, nil
 }

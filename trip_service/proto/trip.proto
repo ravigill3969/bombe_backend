@@ -68,6 +68,7 @@ message RiderPickedUpResponse {
 
 message TripCompletedRequest {
   string trip_id = 1;
+  string rider_id = 2; 
 }
 
 message TripCompletedResponse {
@@ -87,6 +88,16 @@ message GetActiveTripRiderResponse {
   string trip_id = 6;
 }
 
+message TotalEarningTodayRequest {
+    string driver_id = 1; 
+}
+
+message TotalEarningTodayResponse {
+    float total_earning_today = 1;
+    int32 total_trips_today = 2;
+}
+
+
 service TripService {
   rpc AcceptTripDriver(AcceptTripDriverRequest) returns (AcceptTripDriverResponse);
   rpc GetActiveTrip(GetActiveTripRequest) returns (GetActiveTripResponse);
@@ -94,4 +105,7 @@ service TripService {
   rpc RiderPickedUp(RiderPickedUpRequest) returns (RiderPickedUpResponse);
   rpc TripCompleted(TripCompletedRequest) returns (TripCompletedResponse);
   rpc GetActiveTripRider(GetActiveTripRiderRequest) returns (GetActiveTripRiderResponse);
+
+
+  rpc TotalEarningToday(TotalEarningTodayRequest) returns (TotalEarningTodayResponse);
 }

@@ -25,6 +25,7 @@ const (
 	TripService_RiderPickedUp_FullMethodName      = "/trip.v1.TripService/RiderPickedUp"
 	TripService_TripCompleted_FullMethodName      = "/trip.v1.TripService/TripCompleted"
 	TripService_GetActiveTripRider_FullMethodName = "/trip.v1.TripService/GetActiveTripRider"
+	TripService_TotalEarningToday_FullMethodName  = "/trip.v1.TripService/TotalEarningToday"
 )
 
 // TripServiceClient is the client API for TripService service.
@@ -37,6 +38,7 @@ type TripServiceClient interface {
 	RiderPickedUp(ctx context.Context, in *RiderPickedUpRequest, opts ...grpc.CallOption) (*RiderPickedUpResponse, error)
 	TripCompleted(ctx context.Context, in *TripCompletedRequest, opts ...grpc.CallOption) (*TripCompletedResponse, error)
 	GetActiveTripRider(ctx context.Context, in *GetActiveTripRiderRequest, opts ...grpc.CallOption) (*GetActiveTripRiderResponse, error)
+	TotalEarningToday(ctx context.Context, in *TotalEarningTodayRequest, opts ...grpc.CallOption) (*TotalEarningTodayResponse, error)
 }
 
 type tripServiceClient struct {
@@ -107,6 +109,16 @@ func (c *tripServiceClient) GetActiveTripRider(ctx context.Context, in *GetActiv
 	return out, nil
 }
 
+func (c *tripServiceClient) TotalEarningToday(ctx context.Context, in *TotalEarningTodayRequest, opts ...grpc.CallOption) (*TotalEarningTodayResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TotalEarningTodayResponse)
+	err := c.cc.Invoke(ctx, TripService_TotalEarningToday_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TripServiceServer is the server API for TripService service.
 // All implementations must embed UnimplementedTripServiceServer
 // for forward compatibility.
@@ -117,6 +129,7 @@ type TripServiceServer interface {
 	RiderPickedUp(context.Context, *RiderPickedUpRequest) (*RiderPickedUpResponse, error)
 	TripCompleted(context.Context, *TripCompletedRequest) (*TripCompletedResponse, error)
 	GetActiveTripRider(context.Context, *GetActiveTripRiderRequest) (*GetActiveTripRiderResponse, error)
+	TotalEarningToday(context.Context, *TotalEarningTodayRequest) (*TotalEarningTodayResponse, error)
 	mustEmbedUnimplementedTripServiceServer()
 }
 
@@ -144,6 +157,9 @@ func (UnimplementedTripServiceServer) TripCompleted(context.Context, *TripComple
 }
 func (UnimplementedTripServiceServer) GetActiveTripRider(context.Context, *GetActiveTripRiderRequest) (*GetActiveTripRiderResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetActiveTripRider not implemented")
+}
+func (UnimplementedTripServiceServer) TotalEarningToday(context.Context, *TotalEarningTodayRequest) (*TotalEarningTodayResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method TotalEarningToday not implemented")
 }
 func (UnimplementedTripServiceServer) mustEmbedUnimplementedTripServiceServer() {}
 func (UnimplementedTripServiceServer) testEmbeddedByValue()                     {}
@@ -274,6 +290,24 @@ func _TripService_GetActiveTripRider_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TripService_TotalEarningToday_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TotalEarningTodayRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TripServiceServer).TotalEarningToday(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TripService_TotalEarningToday_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TripServiceServer).TotalEarningToday(ctx, req.(*TotalEarningTodayRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TripService_ServiceDesc is the grpc.ServiceDesc for TripService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -304,6 +338,10 @@ var TripService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetActiveTripRider",
 			Handler:    _TripService_GetActiveTripRider_Handler,
+		},
+		{
+			MethodName: "TotalEarningToday",
+			Handler:    _TripService_TotalEarningToday_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -92,3 +92,27 @@ func (r *RiderAuthServer) LogoutRider(ctx context.Context, req *pb.LogoutRiderRe
 		Message:      "Logout success",
 	}, nil
 }
+
+func (s *RiderAuthServer) UpdatePasswordRider(ctx context.Context, req *pb.UpdatePasswordRiderRequest) (*pb.UpdatePasswordRiderResponse, error) {
+	driver_id, ok := ctx.Value(middleware.Driver_id).(string)
+
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "Unauthorized")
+	}
+
+	if req.GetConfirmNewPassword() != req.GetNewPassword() {
+		return nil, status.Error(codes.InvalidArgument, "New password doesnot match")
+	}
+
+	err := s.riderAuthService.UpdateDriverPasswordService(ctx, req.GetCurrentPassword(), req.GetNewPassword(), driver_id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.UpdatePasswordRiderResponse{
+		Message:   "Password updated successfully",
+		IsSuccess: true,
+	}, nil
+
+}

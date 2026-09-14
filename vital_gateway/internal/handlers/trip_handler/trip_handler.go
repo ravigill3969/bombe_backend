@@ -24,6 +24,8 @@ func NewTripHandler(tripClient pb.TripServiceClient) *TripHandler {
 	}
 }
 
+const AUD = "trip-grpc-service"
+
 func (t *TripHandler) AssignTripToDriver(w http.ResponseWriter, r *http.Request) {
 	driverId, ok := r.Context().Value(driver_middleware.ClaimsContextKey).(string)
 
@@ -32,7 +34,7 @@ func (t *TripHandler) AssignTripToDriver(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	internalToken, err := utils.CreateToken(driverId, "driver", 1*time.Minute, "trip-grpc-service")
+	internalToken, err := utils.CreateToken(driverId, "driver", 1*time.Minute, AUD)
 	if err != nil {
 		utils.RespondWithError(w, "Internal server error", http.StatusInternalServerError)
 		return
@@ -81,7 +83,7 @@ func (t *TripHandler) GetTripWithDriverId(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	internalToken, err := utils.CreateToken(driverId, "driver", 1*time.Minute, "trip-grpc-service")
+	internalToken, err := utils.CreateToken(driverId, "driver", 1*time.Minute, AUD)
 	if err != nil {
 		utils.RespondWithError(w, "Internal server error", http.StatusInternalServerError)
 		return
@@ -119,7 +121,7 @@ func (t *TripHandler) UpdateTripStatusToPicked(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	internalToken, err := utils.CreateToken(driverId, "driver", 1*time.Minute, "trip-grpc-service")
+	internalToken, err := utils.CreateToken(driverId, "driver", 1*time.Minute, AUD)
 	if err != nil {
 		utils.RespondWithError(w, "Internal server error", http.StatusInternalServerError)
 		return
@@ -168,7 +170,7 @@ func (t *TripHandler) MarkTripCompleted(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	internalToken, err := utils.CreateToken(driverId, "driver", 1*time.Minute, "trip-grpc-service")
+	internalToken, err := utils.CreateToken(driverId, "driver", 1*time.Minute, AUD)
 	if err != nil {
 		utils.RespondWithError(w, "Internal server error", http.StatusInternalServerError)
 		return
@@ -217,7 +219,7 @@ func (t *TripHandler) GetTripWithRiderId(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	internalToken, err := utils.CreateToken(riderId, "rider", 1*time.Minute, "trip-grpc-service")
+	internalToken, err := utils.CreateToken(riderId, "rider", 1*time.Minute, AUD)
 	if err != nil {
 		utils.RespondWithError(w, "Internal server error", http.StatusInternalServerError)
 		return
@@ -245,4 +247,134 @@ func (t *TripHandler) GetTripWithRiderId(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(int(http.StatusOK))
 	w.Write(jsonBytes)
 
+}
+
+func (t *TripHandler) CancelTripRider(w http.ResponseWriter, r *http.Request) {
+	riderId, ok := r.Context().Value(rider_middleware.ClaimsContextKey).(string)
+
+	if !ok {
+		utils.RespondWithError(w, "Unauthorized rider context", http.StatusUnauthorized)
+		return
+	}
+
+	internalToken, err := utils.CreateToken(riderId, "rider", 1*time.Minute, AUD)
+	if err != nil {
+		utils.RespondWithError(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	md := metadata.Pairs("authorization", "Bearer "+internalToken)
+	ctx := metadata.NewOutgoingContext(r.Context(), md)
+
+	bodyBytes, err := io.ReadAll(r.Body)
+
+	if err != nil {
+		fmt.Println("error reading request body in completed trip:", err)
+		utils.RespondWithError(w, "Failed to read request body", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	grpcReq := pb.CancelTripRequest{}
+
+	err = protojson.Unmarshal(bodyBytes, &grpcReq)
+
+	if err != nil {
+		fmt.Println("error unmarshalling request body in cancelling trip:", err)
+		utils.RespondWithError(w, "Invalid JSON format for gRPC type: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	grpcResp, err := t.TripClient.CancelTrip((ctx), &grpcReq)
+
+	if err != nil {
+		fmt.Println("error calling trip-grpc-service cancel trip:", err)
+		status_code, status := utils.GRPCtoHTTPStatus(err)
+		utils.RespondWithError(w, status, status_code)
+		return
+	}
+
+	utils.RespondWithSuccess(w, grpcResp.GetMessage(), http.StatusCreated, "")
+}
+
+func (t *TripHandler) CancelTripDriver(w http.ResponseWriter, r *http.Request) {
+	driverId, ok := r.Context().Value(driver_middleware.ClaimsContextKey).(string)
+
+	if !ok {
+		utils.RespondWithError(w, "Unauthorized driver context", http.StatusUnauthorized)
+		return
+	}
+
+	internalToken, err := utils.CreateToken(driverId, "driver", 1*time.Minute, AUD)
+	if err != nil {
+		utils.RespondWithError(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	md := metadata.Pairs("authorization", "Bearer "+internalToken)
+	ctx := metadata.NewOutgoingContext(r.Context(), md)
+
+	bodyBytes, err := io.ReadAll(r.Body)
+
+	if err != nil {
+		fmt.Println("error reading request body in completed trip:", err)
+		utils.RespondWithError(w, "Failed to read request body", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	grpcReq := pb.CancelTripRequest{}
+
+	err = protojson.Unmarshal(bodyBytes, &grpcReq)
+
+	if err != nil {
+		fmt.Println("error unmarshalling request body in cancelling trip:", err)
+		utils.RespondWithError(w, "Invalid JSON format for gRPC type: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	grpcResp, err := t.TripClient.CancelTrip((ctx), &grpcReq)
+
+	if err != nil {
+		fmt.Println("error calling trip-grpc-service cancel trip:", err)
+		status_code, status := utils.GRPCtoHTTPStatus(err)
+		utils.RespondWithError(w, status, status_code)
+		return
+	}
+
+	utils.RespondWithSuccess(w, grpcResp.GetMessage(), http.StatusCreated, "")
+
+}
+
+func (t *TripHandler) GetTodayEarnings(w http.ResponseWriter, r *http.Request) {
+	driverId, ok := r.Context().Value(driver_middleware.ClaimsContextKey).(string)
+
+	if !ok {
+		utils.RespondWithError(w, "Unauthorized driver context", http.StatusUnauthorized)
+		return
+	}
+
+	internalToken, err := utils.CreateToken(driverId, "driver", 1*time.Minute, AUD)
+	if err != nil {
+		utils.RespondWithError(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	md := metadata.Pairs("authorization", "Bearer "+internalToken)
+	ctx := metadata.NewOutgoingContext(r.Context(), md)
+
+	grpcReq := &pb.TotalEarningTodayRequest{
+		DriverId: driverId,
+	}
+
+	grpcResp, err := t.TripClient.TotalEarningToday((ctx), grpcReq)
+
+	if err != nil {
+		fmt.Println("error calling trip-grpc-service  get total earnings:", err)
+		status_code, status := utils.GRPCtoHTTPStatus(err)
+		utils.RespondWithError(w, status, status_code)
+		return
+	}
+
+	utils.RespondWithSuccess(w, "Success", http.StatusCreated, grpcResp)
 }

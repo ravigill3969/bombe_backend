@@ -55,6 +55,7 @@ func (q *SQSQueue) DeleteMessage(
 func (q *SQSQueue) SendMessage(
 	ctx context.Context,
 	data any,
+
 ) error {
 
 	body, err := json.Marshal(data)

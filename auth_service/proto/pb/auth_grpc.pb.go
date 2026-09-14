@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	RiderAuthService_RegisterRider_FullMethodName = "/auth.RiderAuthService/RegisterRider"
-	RiderAuthService_LoginRider_FullMethodName    = "/auth.RiderAuthService/LoginRider"
-	RiderAuthService_GetRiderInfo_FullMethodName  = "/auth.RiderAuthService/GetRiderInfo"
-	RiderAuthService_LogoutRider_FullMethodName   = "/auth.RiderAuthService/LogoutRider"
+	RiderAuthService_RegisterRider_FullMethodName       = "/auth.RiderAuthService/RegisterRider"
+	RiderAuthService_LoginRider_FullMethodName          = "/auth.RiderAuthService/LoginRider"
+	RiderAuthService_GetRiderInfo_FullMethodName        = "/auth.RiderAuthService/GetRiderInfo"
+	RiderAuthService_LogoutRider_FullMethodName         = "/auth.RiderAuthService/LogoutRider"
+	RiderAuthService_UpdatePasswordRider_FullMethodName = "/auth.RiderAuthService/UpdatePasswordRider"
 )
 
 // RiderAuthServiceClient is the client API for RiderAuthService service.
@@ -33,6 +34,7 @@ type RiderAuthServiceClient interface {
 	LoginRider(ctx context.Context, in *RiderLoginRequest, opts ...grpc.CallOption) (*RiderAuthResponse, error)
 	GetRiderInfo(ctx context.Context, in *GetRiderInfoRequest, opts ...grpc.CallOption) (*GetRiderInfoResponse, error)
 	LogoutRider(ctx context.Context, in *LogoutRiderRequest, opts ...grpc.CallOption) (*LogoutRiderResponse, error)
+	UpdatePasswordRider(ctx context.Context, in *UpdatePasswordRiderRequest, opts ...grpc.CallOption) (*UpdatePasswordRiderResponse, error)
 }
 
 type riderAuthServiceClient struct {
@@ -83,6 +85,16 @@ func (c *riderAuthServiceClient) LogoutRider(ctx context.Context, in *LogoutRide
 	return out, nil
 }
 
+func (c *riderAuthServiceClient) UpdatePasswordRider(ctx context.Context, in *UpdatePasswordRiderRequest, opts ...grpc.CallOption) (*UpdatePasswordRiderResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdatePasswordRiderResponse)
+	err := c.cc.Invoke(ctx, RiderAuthService_UpdatePasswordRider_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RiderAuthServiceServer is the server API for RiderAuthService service.
 // All implementations must embed UnimplementedRiderAuthServiceServer
 // for forward compatibility.
@@ -91,6 +103,7 @@ type RiderAuthServiceServer interface {
 	LoginRider(context.Context, *RiderLoginRequest) (*RiderAuthResponse, error)
 	GetRiderInfo(context.Context, *GetRiderInfoRequest) (*GetRiderInfoResponse, error)
 	LogoutRider(context.Context, *LogoutRiderRequest) (*LogoutRiderResponse, error)
+	UpdatePasswordRider(context.Context, *UpdatePasswordRiderRequest) (*UpdatePasswordRiderResponse, error)
 	mustEmbedUnimplementedRiderAuthServiceServer()
 }
 
@@ -112,6 +125,9 @@ func (UnimplementedRiderAuthServiceServer) GetRiderInfo(context.Context, *GetRid
 }
 func (UnimplementedRiderAuthServiceServer) LogoutRider(context.Context, *LogoutRiderRequest) (*LogoutRiderResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method LogoutRider not implemented")
+}
+func (UnimplementedRiderAuthServiceServer) UpdatePasswordRider(context.Context, *UpdatePasswordRiderRequest) (*UpdatePasswordRiderResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdatePasswordRider not implemented")
 }
 func (UnimplementedRiderAuthServiceServer) mustEmbedUnimplementedRiderAuthServiceServer() {}
 func (UnimplementedRiderAuthServiceServer) testEmbeddedByValue()                          {}
@@ -206,6 +222,24 @@ func _RiderAuthService_LogoutRider_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RiderAuthService_UpdatePasswordRider_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdatePasswordRiderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RiderAuthServiceServer).UpdatePasswordRider(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RiderAuthService_UpdatePasswordRider_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RiderAuthServiceServer).UpdatePasswordRider(ctx, req.(*UpdatePasswordRiderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RiderAuthService_ServiceDesc is the grpc.ServiceDesc for RiderAuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -229,17 +263,22 @@ var RiderAuthService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "LogoutRider",
 			Handler:    _RiderAuthService_LogoutRider_Handler,
 		},
+		{
+			MethodName: "UpdatePasswordRider",
+			Handler:    _RiderAuthService_UpdatePasswordRider_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "auth.proto",
 }
 
 const (
-	DriverAuthService_LoginDriver_FullMethodName      = "/auth.DriverAuthService/LoginDriver"
-	DriverAuthService_RegisterDriver_FullMethodName   = "/auth.DriverAuthService/RegisterDriver"
-	DriverAuthService_GetDriverInfo_FullMethodName    = "/auth.DriverAuthService/GetDriverInfo"
-	DriverAuthService_GetDriverCarInfo_FullMethodName = "/auth.DriverAuthService/GetDriverCarInfo"
-	DriverAuthService_LogoutDriver_FullMethodName     = "/auth.DriverAuthService/LogoutDriver"
+	DriverAuthService_LoginDriver_FullMethodName          = "/auth.DriverAuthService/LoginDriver"
+	DriverAuthService_RegisterDriver_FullMethodName       = "/auth.DriverAuthService/RegisterDriver"
+	DriverAuthService_GetDriverInfo_FullMethodName        = "/auth.DriverAuthService/GetDriverInfo"
+	DriverAuthService_GetDriverCarInfo_FullMethodName     = "/auth.DriverAuthService/GetDriverCarInfo"
+	DriverAuthService_LogoutDriver_FullMethodName         = "/auth.DriverAuthService/LogoutDriver"
+	DriverAuthService_UpdatePasswordDriver_FullMethodName = "/auth.DriverAuthService/UpdatePasswordDriver"
 )
 
 // DriverAuthServiceClient is the client API for DriverAuthService service.
@@ -251,6 +290,7 @@ type DriverAuthServiceClient interface {
 	GetDriverInfo(ctx context.Context, in *GetDriverInfoRequest, opts ...grpc.CallOption) (*GetDriverInfoResponse, error)
 	GetDriverCarInfo(ctx context.Context, in *GetDriverCarInfoRequest, opts ...grpc.CallOption) (*GetDriverCarInfoResponse, error)
 	LogoutDriver(ctx context.Context, in *LogoutDriverRequest, opts ...grpc.CallOption) (*LogoutDriverResponse, error)
+	UpdatePasswordDriver(ctx context.Context, in *UpdatePasswordDriverRequest, opts ...grpc.CallOption) (*UpdatePasswordDriverResponse, error)
 }
 
 type driverAuthServiceClient struct {
@@ -311,6 +351,16 @@ func (c *driverAuthServiceClient) LogoutDriver(ctx context.Context, in *LogoutDr
 	return out, nil
 }
 
+func (c *driverAuthServiceClient) UpdatePasswordDriver(ctx context.Context, in *UpdatePasswordDriverRequest, opts ...grpc.CallOption) (*UpdatePasswordDriverResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdatePasswordDriverResponse)
+	err := c.cc.Invoke(ctx, DriverAuthService_UpdatePasswordDriver_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DriverAuthServiceServer is the server API for DriverAuthService service.
 // All implementations must embed UnimplementedDriverAuthServiceServer
 // for forward compatibility.
@@ -320,6 +370,7 @@ type DriverAuthServiceServer interface {
 	GetDriverInfo(context.Context, *GetDriverInfoRequest) (*GetDriverInfoResponse, error)
 	GetDriverCarInfo(context.Context, *GetDriverCarInfoRequest) (*GetDriverCarInfoResponse, error)
 	LogoutDriver(context.Context, *LogoutDriverRequest) (*LogoutDriverResponse, error)
+	UpdatePasswordDriver(context.Context, *UpdatePasswordDriverRequest) (*UpdatePasswordDriverResponse, error)
 	mustEmbedUnimplementedDriverAuthServiceServer()
 }
 
@@ -344,6 +395,9 @@ func (UnimplementedDriverAuthServiceServer) GetDriverCarInfo(context.Context, *G
 }
 func (UnimplementedDriverAuthServiceServer) LogoutDriver(context.Context, *LogoutDriverRequest) (*LogoutDriverResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method LogoutDriver not implemented")
+}
+func (UnimplementedDriverAuthServiceServer) UpdatePasswordDriver(context.Context, *UpdatePasswordDriverRequest) (*UpdatePasswordDriverResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdatePasswordDriver not implemented")
 }
 func (UnimplementedDriverAuthServiceServer) mustEmbedUnimplementedDriverAuthServiceServer() {}
 func (UnimplementedDriverAuthServiceServer) testEmbeddedByValue()                           {}
@@ -456,6 +510,24 @@ func _DriverAuthService_LogoutDriver_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DriverAuthService_UpdatePasswordDriver_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdatePasswordDriverRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DriverAuthServiceServer).UpdatePasswordDriver(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DriverAuthService_UpdatePasswordDriver_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DriverAuthServiceServer).UpdatePasswordDriver(ctx, req.(*UpdatePasswordDriverRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DriverAuthService_ServiceDesc is the grpc.ServiceDesc for DriverAuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -482,6 +554,10 @@ var DriverAuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "LogoutDriver",
 			Handler:    _DriverAuthService_LogoutDriver_Handler,
+		},
+		{
+			MethodName: "UpdatePasswordDriver",
+			Handler:    _DriverAuthService_UpdatePasswordDriver_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

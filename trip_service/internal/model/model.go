@@ -43,6 +43,7 @@ type SQSDataToMainServer struct {
 	PaymentID   string `json:"payment_id"`
 	RiderID     string `json:"rider_id"`
 	DriverFare  int64  `json:"driver_fare"`
+	For         string `json:"for"`
 	RideDetails RideDetails
 	Pickup      Location
 	Dropoff     Location
@@ -81,4 +82,35 @@ type Trip struct {
 	CompletedAt        *time.Time
 	CancelledAt        *time.Time
 	UpdatedAt          time.Time
+}
+
+type SQSTripCancelRequestToPayment struct {
+	PaymentId  string `json:"payment_id"`
+	ServerType string `json:"server_type"`
+	Aud        string `json:"aud"`
+	Message    string `json:"message"`
+	RiderID    string `json:"rider_id"`
+	DriverId   string `json:"driver_id"`
+}
+
+type SQSTripCancelRequestToMain struct {
+	PaymentId           string `json:"payment_id"`
+	ServerType          string `json:"server_type"`
+	Aud                 string `json:"aud"`
+	Message             string `json:"message"`
+	RiderID             string `json:"rider_id"`
+	DriverId            string `json:"driver_id"`
+	For                 string `json:"for"`
+	IsCancelledByDriver bool   `json:"is_cancelled_by_driver"`
+	TripId              string `json:"trip_id"`
+}
+
+type SQSTripCompletedRequestToMain struct {
+	ServerType          string `json:"server_type"`
+	Aud                 string `json:"aud"`
+	Message             string `json:"message"`
+	RiderID             string `json:"rider_id"`
+	DriverId            string `json:"driver_id"`
+	For                 string `json:"for"`
+	TripId              string `json:"trip_id"`
 }

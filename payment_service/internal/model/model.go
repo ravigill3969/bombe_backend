@@ -36,4 +36,14 @@ type PaymentSuccessParams struct {
 	TempRideId  string
 	Fare        FareDetails
 	Ride        RideDetails
+	PaymentIntentId string
+}
+
+type SQSTripCancelRequestFromCancelTrip struct {
+	PaymentId  string `json:"payment_id"`
+	ServerType string `json:"server_type"`
+	Aud        string `json:"aud"`
+	Message    string `json:"message"`
+	RiderID    string `json:"rider_id"`
+	DriverId   string `json:"driver_id"`
 }

@@ -220,6 +220,12 @@ func (p *PaymentServer) PaymentSuccess(ctx context.Context, req *pb.PaymentSucce
 		validation["temp_ride_id"] = "temp_ride_id is required"
 	}
 
+	payment_intent_id := req.GetPaymentIntentId()
+
+	if strings.TrimSpace(payment_intent_id) == "" {
+		validation["payment_intent_id"] = "payment_intent_id is required"
+	}
+
 	if len(validation) > 0 {
 		return nil, errors.CreateError(validation)
 	}
@@ -245,6 +251,7 @@ func (p *PaymentServer) PaymentSuccess(ctx context.Context, req *pb.PaymentSucce
 			DurationSeconds: req.GetRideDetails().GetDurationSeconds(),
 			DistanceMeters:  req.GetRideDetails().GetDistanceMetrs(),
 		},
+		PaymentIntentId: payment_intent_id,
 	}
 
 	err := p.paymentService.PaymentSuccess(ctx, params, user_id)

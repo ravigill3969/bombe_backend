@@ -6,6 +6,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 )
 
 type SQSQueue struct {
@@ -66,6 +67,37 @@ func (q *SQSQueue) PublishRideRequest(
 	_, err = q.client.SendMessage(ctx, &sqs.SendMessageInput{
 		QueueUrl:    aws.String(q.queueURL),
 		MessageBody: aws.String(string(body)),
+	})
+
+	return err
+}
+
+func (q *SQSQueue) ReceiveMessages(
+	ctx context.Context,
+) ([]types.Message, error) {
+
+	result, err := q.client.ReceiveMessage(ctx, &sqs.ReceiveMessageInput{
+		QueueUrl:            aws.String(q.queueURL),
+		MaxNumberOfMessages: 10,
+		WaitTimeSeconds:     20,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Messages, nil
+}
+
+
+func (q *SQSQueue) DeleteMessage(
+	ctx context.Context,
+	receiptHandle string,
+) error {
+
+	_, err := q.client.DeleteMessage(ctx, &sqs.DeleteMessageInput{
+		QueueUrl:      aws.String(q.queueURL),
+		ReceiptHandle: aws.String(receiptHandle),
 	})
 
 	return err

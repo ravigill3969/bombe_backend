@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"payment_service/internal/model"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v86"
+	"github.com/stripe/stripe-go/v86/refund"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -112,9 +114,8 @@ func (p *PaymentService) PaymentSuccess(ctx context.Context, params model.Paymen
 
 	p_id, err := p.paymentRepo.PaymentSuccessRepo(ctx, params, user_id)
 
-	// params.se
-
 	if err != nil {
+		fmt.Println("error payment service :: ", err)
 		err = p.sqsQueue.PublishRideRequest(ctx, repository.SQSData{
 			Status:     400,
 			ServerType: "PAYMENT_SERVER",
@@ -166,4 +167,82 @@ func (p *PaymentService) PaymentSuccess(ctx context.Context, params model.Paymen
 	}
 	return nil
 
+}
+
+func (p *PaymentService) ReadSqsStream(ctx context.Context) {
+	fmt.Println("starting sqs")
+	for {
+
+		messages, err := p.sqsQueue.ReceiveMessages(ctx)
+
+		if err != nil {
+			fmt.Printf("error start sqs %s", err.Error())
+			continue
+		}
+
+		for _, message := range messages {
+			if message.Body == nil {
+				continue
+			}
+
+			var data model.SQSTripCancelRequestFromCancelTrip
+
+			err := json.Unmarshal(
+				[]byte(*message.Body),
+				&data,
+			)
+
+			fmt.Println(data)
+
+			if err != nil {
+				fmt.Printf("invalid SQS message: %s", err.Error())
+				continue
+			}
+
+			if data.Aud != "PAYMENT_SERVER" {
+				continue
+			}
+
+			p_id := data.PaymentId
+
+			err = p.ProcessRefundWithPaymentIntentId(p_id)
+
+			fmt.Println("error issuing refund ::", err)
+
+			err = p.sqsQueue.DeleteMessage(ctx, *message.ReceiptHandle)
+
+			if err != nil {
+				fmt.Println("error deleting message will try again: ", err)
+			}
+
+		}
+	}
+}
+
+func (p *PaymentService) ProcessRefundWithPaymentIntentId(paymentid string) error {
+
+	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
+	paymentIntentId, err := p.paymentRepo.GetPaymentIntentIdWithPaymentID(paymentid)
+
+	if err != nil {
+		fmt.Println("Unable to get payment intent :: ", err)
+	}
+
+	params := &stripe.RefundParams{
+		PaymentIntent: stripe.String(paymentIntentId),
+	}
+
+	_, err = refund.New(params)
+	if err != nil {
+		fmt.Println("failed to create refund: %w", err)
+		return fmt.Errorf("failed to create refund: %w", err)
+	}
+
+	err = p.paymentRepo.UpdateStatusInPaymentDB(paymentIntentId, "refunded")
+
+	if err != nil {
+		fmt.Println("failed to update payment refund in db :: %w", err)
+	}
+
+	return nil
 }

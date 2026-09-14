@@ -335,3 +335,44 @@ func (d *DriverAuthRepo) GetDriverCarInfoRepo(driver_id string, ctx context.Cont
 
 	return carinfo, nil
 }
+
+func (d *DriverAuthRepo) UpdatePassword(ctx context.Context, driverid string, newPassword string, cur_password string) error {
+	query := `SELECT password_hash FROM driver_info WHERE driver_id = $1`
+
+	var passoword_hash string
+
+	err := d.db.QueryRowContext(ctx, query, driverid).Scan(&passoword_hash)
+
+	if err != nil {
+		fmt.Println("db query looking for password failed", err)
+		return status.Error(codes.Internal, "Internal server error")
+	}
+
+	isMatch := utils.CheckPasswordHash(cur_password, passoword_hash)
+
+	if !isMatch {
+		return status.Error(codes.Unauthenticated, "Unauthenticated")
+	}
+
+	new_password_hash, err := utils.HashPassword(newPassword)
+
+	if err != nil {
+		fmt.Println("Error :: Hashing password", err)
+		return status.Error(codes.Internal, "Internal server error")
+	}
+
+	query = `
+	UPDATE driver_info
+	SET password_hash = $1
+		updated_at = NOW()
+	WHERE driver_id = $2
+ 	`
+
+	_, err = d.db.Exec(query, new_password_hash, driverid)
+	if err != nil {
+		fmt.Println("Error :: updating driver password", err)
+		return status.Error(codes.Internal, "Internal server error")
+	}
+
+	return nil
+}

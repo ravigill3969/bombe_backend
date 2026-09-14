@@ -219,3 +219,45 @@ func (r *RiderAuthRepo) GetRiderInfoRepo(ctx context.Context, rider_id string) G
 		StatusCode: 200,
 	}
 }
+
+
+func (d *RiderAuthRepo) UpdatePassword(ctx context.Context, riderId string, newPassword string, cur_password string) error {
+	query := `SELECT password_hash FROM driver_info WHERE rider_info = $1`
+
+	var passoword_hash string
+
+	err := d.db.QueryRowContext(ctx, query, riderId).Scan(&passoword_hash)
+
+	if err != nil {
+		fmt.Println("db query looking for password failed", err)
+		return status.Error(codes.Internal, "Internal server error")
+	}
+
+	isMatch := utils.CheckPasswordHash(cur_password, passoword_hash)
+
+	if !isMatch {
+		return status.Error(codes.Unauthenticated, "Unauthenticated")
+	}
+
+	new_password_hash, err := utils.HashPassword(newPassword)
+
+	if err != nil {
+		fmt.Println("Error :: Hashing password", err)
+		return status.Error(codes.Internal, "Internal server error")
+	}
+
+	query = `
+	UPDATE rider_info
+	SET password_hash = $1
+		updated_at = NOW()
+	WHERE rider_id = $2
+ 	`
+
+	_, err = d.db.Exec(query, new_password_hash, riderId)
+	if err != nil {
+		fmt.Println("Error :: updating rider password", err)
+		return status.Error(codes.Internal, "Internal server error")
+	}
+
+	return nil
+}

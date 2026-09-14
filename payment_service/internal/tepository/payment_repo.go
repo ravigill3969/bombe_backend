@@ -69,7 +69,8 @@ func (p *PaymentRepo) PaymentSuccessRepo(
 	query := `
 		UPDATE payment
 		SET status = 'success',
-		    updated_at = NOW()
+		    updated_at = NOW(),
+			stripe_payment_intent_id = $3
 		WHERE temp_ride_id = $1
 		  AND rider_id = $2
 		RETURNING id
@@ -82,6 +83,7 @@ func (p *PaymentRepo) PaymentSuccessRepo(
 		query,
 		params.TempRideId,
 		userID,
+		params.PaymentIntentId,
 	).Scan(&paymentID)
 
 	if err != nil {
@@ -101,3 +103,36 @@ func (p *PaymentRepo) PaymentSuccessRepo(
 	return paymentID, nil
 }
 
+func (t *PaymentRepo) GetPaymentIntentIdWithPaymentID(payment_id string) (string, error) {
+	query := `
+		SELECT stripe_payment_intent_id
+		FROM payment
+		WHERE id = $1
+	`
+
+	var payment_intent_id string
+
+	err := t.db.QueryRow(query, payment_id).Scan(&payment_intent_id)
+	if err != nil {
+		return "", err
+	}
+
+	return payment_intent_id, nil
+}
+
+func (t *PaymentRepo) UpdateStatusInPaymentDB(paymentID string, status string) error {
+	query := `
+		UPDATE payment
+		SET
+			status = $2,
+			updated_at = NOW()
+		WHERE id = $1
+	`
+
+	_, err := t.db.Exec(query, paymentID, status)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

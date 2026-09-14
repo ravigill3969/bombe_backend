@@ -53,6 +53,17 @@ message LogoutRiderResponse {
   string message = 5;
 }
 
+message UpdatePasswordRiderRequest {
+  string current_password = 1;
+  string new_password = 2;
+  string confirm_new_password = 3;
+}
+
+message UpdatePasswordRiderResponse {
+  string message = 1;
+  bool is_success = 2;
+}
+
 service RiderAuthService {
   rpc RegisterRider(RiderRegisterRequest) returns (RiderAuthResponse);
   rpc LoginRider(RiderLoginRequest) returns (RiderAuthResponse);
@@ -60,6 +71,9 @@ service RiderAuthService {
   rpc GetRiderInfo(GetRiderInfoRequest) returns (GetRiderInfoResponse);
 
   rpc LogoutRider(LogoutRiderRequest) returns (LogoutRiderResponse);
+
+  rpc UpdatePasswordRider(UpdatePasswordRiderRequest) returns (UpdatePasswordRiderResponse);
+
 }
 
 ///////////////////////////////////////////
@@ -148,6 +162,17 @@ message GetDriverCarInfoResponse {
   bool is_verified = 10;
 }
 
+message UpdatePasswordDriverRequest {
+  string current_password = 1;
+  string new_password = 2;
+  string confirm_new_password = 3;
+}
+
+message UpdatePasswordDriverResponse {
+  string message = 1;
+  bool is_success = 2;
+}
+
 service DriverAuthService {
   rpc LoginDriver(DriverLoginRequest) returns (DriverAuthResponse);
   rpc RegisterDriver(DriverRegisterRequest) returns (DriverAuthResponse);
@@ -156,6 +181,7 @@ service DriverAuthService {
   rpc GetDriverCarInfo(GetDriverCarInfoRequest) returns (GetDriverCarInfoResponse);
 
   rpc LogoutDriver(LogoutDriverRequest) returns (LogoutDriverResponse);
+  rpc UpdatePasswordDriver(UpdatePasswordDriverRequest) returns (UpdatePasswordDriverResponse);
 }
 
 /////////////////////////////////////

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -48,7 +49,9 @@ func main() {
 
 	s := grpc.NewServer(grpc.UnaryInterceptor(middleware.GrpcAuthInterceptor))
 
-	pb.RegisterPaymentServiceServer(s, InitPaymentServer(db, *sqsRepo))
+	srv := InitPaymentServer(db, *sqsRepo)
+
+	pb.RegisterPaymentServiceServer(s, srv)
 
 	log.Printf("gRPC server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
@@ -60,6 +63,7 @@ func InitPaymentServer(db *sql.DB, sqsrepo repository.SQSQueue) *server.PaymentS
 	paymentRepo := repository.NewPaymentRepo(db)
 	paymentService := service.NewPaymentService(*paymentRepo, &sqsrepo)
 	paymentServer := server.NewPaymentServer(*paymentService)
+
+	go paymentService.ReadSqsStream(context.Background())
 	return paymentServer
 }
-

@@ -4,6 +4,7 @@ import (
 	"auth_service/proto/pb"
 	"bombe_main_server/internal/middleware/driver_middleware"
 	"bombe_main_server/internal/utils"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -53,15 +54,19 @@ func (d *AuthHandler) RegisterDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonBytes, err := protojson.Marshal(grpcResp)
-	if err != nil {
-		utils.RespondWithError(w, "Failed to encode JSON response", http.StatusInternalServerError)
-		return
+	access_cookie := http.Cookie{
+		Name:     "driver_access_token",
+		Value:    grpcResp.AccessToken,
+		Path:     "/",
+		MaxAge:   3600 * 24 * 7,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
 	}
 
-	w.WriteHeader(int(grpcResp.StatusCode))
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(jsonBytes)
+	http.SetCookie(w, &access_cookie)
+
+	utils.RespondWithSuccess(w, "Logged-in successfully", 200, nil)
 }
 
 func (d *AuthHandler) LoginDriver(w http.ResponseWriter, r *http.Request) {
@@ -213,6 +218,55 @@ func (d *AuthHandler) GetDriverCarInfoo(w http.ResponseWriter, r *http.Request) 
 	jsonBytes, err := protojson.Marshal(grpcResp)
 	if err != nil {
 		fmt.Printf("error while responding getdriverinfo: %v\n", err)
+		utils.RespondWithError(w, "Failed to encode JSON response", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(int(http.StatusOK))
+	w.Write(jsonBytes)
+}
+
+func (d *AuthHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
+	driverID, ok := r.Context().Value(driver_middleware.ClaimsContextKey).(string)
+
+	if !ok {
+		utils.RespondWithError(w, "Unauthorized driver context", http.StatusUnauthorized)
+		return
+	}
+
+	internalToken, err := utils.CreateToken(driverID, "driver", 1*time.Minute, "auth-grpc-service")
+	if err != nil {
+		utils.RespondWithError(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	md := metadata.Pairs("authorization", "Bearer "+internalToken)
+	ctx := metadata.NewOutgoingContext(r.Context(), md)
+
+	var data UpdatePasswordRequest
+
+	err = json.NewDecoder(r.Body).Decode(&data)
+
+	if err != nil {
+		utils.RespondWithError(w, "Invalid data", http.StatusBadRequest)
+		return
+	}
+
+	grpcResp, err := d.AuthClient.UpdatePasswordDriver(ctx, &pb.UpdatePasswordDriverRequest{
+		CurrentPassword:    data.CurrentPassword,
+		NewPassword:        data.NewPassword,
+		ConfirmNewPassword: data.ConfirmNewPassword,
+	})
+	if err != nil {
+		statusCode, statusMsg := utils.GRPCtoHTTPStatus(err)
+		utils.RespondWithError(w, statusMsg, statusCode)
+		return
+	}
+
+	jsonBytes, err := protojson.Marshal(grpcResp)
+	if err != nil {
+		fmt.Printf("error while responding updatePassword : %v\n", err)
 		utils.RespondWithError(w, "Failed to encode JSON response", http.StatusInternalServerError)
 		return
 	}

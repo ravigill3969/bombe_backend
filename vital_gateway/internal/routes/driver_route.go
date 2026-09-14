@@ -19,8 +19,9 @@ func NewDriverAuthRoutes(mux *http.ServeMux, handler *driver_handler.AuthHandler
 }
 
 func (d *DriverAuthRoutes) Register() {
-	d.mux.HandleFunc("POST /driver/register", d.handler.RegisterDriver)
 	d.mux.HandleFunc("POST /api/driver/login", d.handler.LoginDriver)
+	d.mux.HandleFunc("POST /api/driver/register", d.handler.RegisterDriver)
+	d.mux.HandleFunc("POST /api/driver/update-password", driver_middleware.DriverAuthMiddleware(d.handler.UpdatePassword))
 
 	d.mux.HandleFunc("GET /api/driver/verify", driver_middleware.DriverAuthMiddleware(d.handler.GetDriverInfoo))
 	d.mux.HandleFunc("GET /api/driver/logout", driver_middleware.DriverAuthMiddleware(d.handler.LogoutDriver))

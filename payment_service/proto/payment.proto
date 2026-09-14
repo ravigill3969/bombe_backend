@@ -48,6 +48,7 @@ message PaymentSuccessRequest {
   GeoLocation dropoff = 4;
   string temp_ride_id = 5;
   RideDetails ride_details = 6;
+  string payment_intent_id = 7;
 }
 
 message PaymentSuccessResponse {}
@@ -60,6 +61,12 @@ message PaymentFailedRequest {
 }
 
 message PaymentFailedResponse {}
+
+message RefundRequest {
+  string payment_id = 1;
+}
+
+message RefundResponse {}
 
 service PaymentService {
   rpc CreateCheckoutSession(CreateCheckoutSessionRequest) returns (CreateCheckoutSessionResponse);

@@ -26,43 +26,71 @@ func NewTripHandler(redis *redis_handler.RedisHandler, sqs *awssqs.SQSQueue, ws 
 
 func (t *TripHandler) ReadMessagesStoredInChannel() {
 
+	type WSMessage struct {
+		Type string `json:"type"`
+	}
+
 	for msg := range t.ws.MsgCh {
 
-		var data socket_model.DataToSendOnLive
+		var wms WSMessage
 
-		if err := json.Unmarshal(msg, &data); err != nil {
-			fmt.Println("Invalid JSON:", err)
-			continue
+		if err := json.Unmarshal(msg, &wms); err != nil {
+			fmt.Println("error parsing json while reading from channel")
+
 		}
 
-		err := t.redis.SetDriverOnline(context.Background(), data.DriverID, data.Latitude, data.Longitude)
+		switch wms.Type {
 
-		if err != nil {
-			fmt.Println("Unable to set driver online", err)
-		}
+		case "LOCATION_UPDATE_FROM_DRIVER":
 
-		if data.RiderID != "" && data.RideID != "" {
+			var data socket_model.DataToSendOnLive
 
-			err = t.redis.RemoveDriver(context.Background(), data.DriverID)
-			if err != nil {
-				fmt.Println("removing rider from redis error", err)
+			if err := json.Unmarshal(msg, &data); err != nil {
+				fmt.Println("Invalid JSON:", err)
+				continue
 			}
 
-			err = t.ws.SendToTargetUser(data.RiderID, socket_model.DataToSendTORiderFromDriver{
-				DriverID:  data.DriverID,
-				Type:      "ASSIGNED_DRIVER_LOCATION_UPDATE",
-				RiderID:   data.RiderID,
-				RideID:    data.RideID,
-				Latitude:  data.Latitude,
-				Longitude: data.Longitude,
-				Status: data.Status,
-			})
+			err := t.redis.SetDriverOnline(context.Background(), data.DriverID, data.Latitude, data.Longitude)
 
 			if err != nil {
-				fmt.Println("Unable to send data to rider", err)
+				fmt.Println("Unable to set driver online", err)
 			}
+
+			if data.RiderID != "" && data.RideID != "" {
+
+				err = t.redis.RemoveDriver(context.Background(), data.DriverID)
+				if err != nil {
+					fmt.Println("removing rider from redis error", err)
+				}
+
+				err = t.ws.SendToTargetUser(data.RiderID, socket_model.DataToSendTORiderFromDriver{
+					DriverID:  data.DriverID,
+					Type:      "ASSIGNED_DRIVER_LOCATION_UPDATE",
+					RiderID:   data.RiderID,
+					RideID:    data.RideID,
+					Latitude:  data.Latitude,
+					Longitude: data.Longitude,
+					Status:    data.Status,
+				})
+
+				if err != nil {
+					fmt.Println("Unable to send data to rider", err)
+				}
+			}
+		case "TRIP_CANCEL_BY_DRIVER":
+		case "TRIP_CANCEL_BY_RIDER":
+
+		case "DRIVER_MARKED_TRIP_AS_COMPLETE":
+
+		case "CHAT_MESSAGE_FROM_RIDER":
+
+		case "CHAT_MESSAGE_FROM_DRIVER":
+
+		default:
+			fmt.Println("message with no assigned type")
+			fmt.Println(string(msg))
 		}
-		// fmt.Println(err)
+
 	}
 
 }
@@ -84,7 +112,7 @@ func (t *TripHandler) StartListeningToSQS() {
 				continue
 			}
 
-			var data SQSDataToMainServer
+			var data SQSDataFor
 
 			err := json.Unmarshal(
 				[]byte(*message.Body),
@@ -92,48 +120,111 @@ func (t *TripHandler) StartListeningToSQS() {
 			)
 
 			if err != nil {
-				fmt.Printf("invalid SQS message: %s", err.Error())
+
+				fmt.Println("error while parsing json for FOR ::", err)
+			}
+
+			switch data.For {
+			case "TRIP_CREATED":
+				{
+					var tripData SQSDataToMainServer
+
+					err := json.Unmarshal(
+						[]byte(*message.Body),
+						&tripData,
+					)
+
+					if err != nil {
+						fmt.Printf("invalid SQS message: %s", err.Error())
+						continue
+					}
+
+					if tripData.Aud != "MAIN_SERVER" {
+						continue
+					}
+
+					driver_ids, err := t.redis.FindDriversNearby(context.Background(), tripData.Pickup.Latitude, tripData.Pickup.Longitude, 5)
+
+					if err != nil {
+						fmt.Println("error finding drivers ", err)
+					}
+
+					for _, e := range driver_ids {
+						fmt.Println("totaldriversfound::", len(driver_ids), e)
+						t.ws.SendToTargetUser(e, TripReqToDriver{
+							Type:        "RIDE_REQUEST_TO_DRIVER",
+							DriverFare:  tripData.DriverFare,
+							RideDetails: tripData.RideDetails,
+							Pickup:      tripData.Pickup,
+							Dropoff:     tripData.Dropoff,
+							RiderID:     tripData.RiderID,
+							TripID:      tripData.TripID,
+						})
+					}
+
+					err = t.sqs.DeleteMessage(context.Background(), *message.ReceiptHandle)
+
+					if err != nil {
+						fmt.Println("error deleting message will try again: ", err)
+					}
+				}
+			case "CANCEL_TRIP":
+				var tripData SQSTripCancelRequestToMain
+				err := json.Unmarshal([]byte(*message.Body), &tripData)
+				if err != nil {
+					fmt.Printf("invalid SQS message trip cancel: %s", err.Error())
+					continue
+				}
+
+				data := CancelTripDataToUser{
+					Type:     "CANCEL_TRIP",
+					TripId:   tripData.TripId,
+					RiderID:  tripData.RiderId,
+					DriverId: tripData.DriverId,
+					Message:  "coming soon",
+				}
+
+				if tripData.IsCancelledByDriver {
+					data.DriverOrRider = "rider"
+					err = t.ws.SendToTargetUser(tripData.RiderId, data)
+				} else {
+					data.DriverOrRider = "driver"
+					err = t.ws.SendToTargetUser(tripData.DriverId, data)
+				}
+
+				if err != nil {
+					fmt.Println("error sending cancel trip message to user err ::", err)
+				}
+
+				if err := t.sqs.DeleteMessage(context.Background(), *message.ReceiptHandle); err != nil {
+					fmt.Println("error deleting cancel trip message: ", err)
+				}
+
+			case "TRIP_COMPLETE":
+				var tripData SQSTripCompletedRequestToMain
+				err := json.Unmarshal([]byte(*message.Body), &tripData)
+				if err != nil {
+					fmt.Printf("invalid SQS message trip complete: %s", err.Error())
+					continue
+				}
+
+				data := CompleteTripDataToUser{
+					Type:     "COMPLETE_TRIP",
+					TripId:   tripData.TripId,
+					DriverId: tripData.DriverId,
+					RiderId:  tripData.RiderId,
+				}
+				t.ws.SendToTargetUser(tripData.RiderId, data)
+
+				if err := t.sqs.DeleteMessage(context.Background(), *message.ReceiptHandle); err != nil {
+					fmt.Println("error deleting trip complete message: ", err)
+				}
+			default:
+				fmt.Println("wtf")
 				continue
 			}
 
-			if data.Aud != "MAIN_SERVER" {
-				continue
-			}
-
-			driver_ids, err := t.redis.FindDriversNearby(context.Background(), data.Pickup.Latitude, data.Pickup.Longitude, 5)
-
-			if err != nil {
-				fmt.Println("error finding drivers ", err)
-			}
-
-
-			for _, e := range driver_ids {
-				fmt.Println(e)
-				t.ws.SendToTargetUser(e, TripReqToDriver{
-					Type:        "RIDE_REQUEST_TO_DRIVER",
-					DriverFare:  data.DriverFare,
-					RideDetails: data.RideDetails,
-					Pickup:      data.Pickup,
-					Dropoff:     data.Dropoff,
-					RiderID:     data.RiderID,
-					TripID:      data.TripID,
-				})
-			}
-
-			err = t.sqs.DeleteMessage(context.Background(), *message.ReceiptHandle)
-
-			if err != nil {
-				fmt.Println("error deleting message will try again: ", err)
-			}
 		}
 
 	}
-}
-
-//sending driver location to rider
-// read from ws
-// send to redis and rider
-
-func ( t *TripHandler)SendDriverLocationInfoToRider(){
-	
 }

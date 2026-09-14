@@ -74,6 +74,7 @@ func (t *TripService) StartListeningSQS(ctx context.Context) {
 			err = t.sqsRepo.SendMessage(ctx, model.SQSDataToMainServer{
 				Status:     200,
 				Aud:        "MAIN_SERVER",
+				For:        "TRIP_CREATED",
 				Message:    "Trip created successfully",
 				TripID:     data.TempRideID, // this in here has become now permanent trip id after above db opreation
 				PaymentID:  data.PaymentID,
@@ -152,22 +153,74 @@ func (t *TripService) RidePickedUpStatusUpdate(ctx context.Context, trip_id stri
 	return nil
 }
 
-func (t *TripService) TripCompletedService(ctx context.Context, tripId string, driverId string) error {
+func (t *TripService) TripCompletedService(ctx context.Context, tripId string, driverId string, riderId string) error {
 	err := t.tripRepo.CompleteTrip(ctx, tripId, driverId)
 
 	if err != nil {
 		return err
 	}
 
+	data := model.SQSTripCompletedRequestToMain{
+		ServerType: "TRIP_SERVER",
+		Aud:        "MAIN_SERVER",
+		Message:    "Trip completed, notify rider and driver",
+		RiderID:    riderId,
+		DriverId:   driverId,
+		For:        "TRIP_COMPLETE",
+		TripId:     tripId,
+	}
+
+	err = t.sqsRepo.SendMessage(ctx, data)
+
+	if err != nil {
+		fmt.Println("error sending data to main server by sqs on trip complete:: ", err)
+	}
+
 	return nil
 }
 
 func (t *TripService) CancelTripService(ctx context.Context, trip_id string, isDriver bool, message string, userID string) error {
-	err := t.tripRepo.CancelTrip(ctx, trip_id, message, userID, isDriver)
+	payment_id, driver_id, rider_id, err := t.tripRepo.CancelTrip(ctx, trip_id, message, userID, isDriver)
 
 	if err != nil {
 		return err
 	}
 
+	err = t.sqsRepo.SendMessage(ctx, &model.SQSTripCancelRequestToPayment{
+		PaymentId:  payment_id,
+		ServerType: "TRIP_SERVER",
+		Aud:        "PAYMENT_SERVER",
+		Message:    "Process refund",
+		RiderID:    rider_id,
+		DriverId:   driver_id,
+	})
+
+	err = t.sqsRepo.SendMessage(ctx, &model.SQSTripCancelRequestToMain{
+		PaymentId:           payment_id,
+		ServerType:          "TRIP_SERVER",
+		Aud:                 "MAIN_SERVER",
+		For:                 "CANCEL_TRIP",
+		Message:             "Notify rider and driver that trip is cancelled",
+		RiderID:             rider_id,
+		DriverId:            driver_id,
+		IsCancelledByDriver: isDriver,
+		TripId:              trip_id,
+	})
+
+	if err != nil {
+		fmt.Println(err)
+		status.Error(codes.Internal, "Unable to process refund! please call custmore service!")
+	}
+
 	return nil
+}
+
+func (t *TripService) TotalEarningsTodayService(ctx context.Context, driver_id string) (float32, int32, error) {
+	earnings, trips, err := t.tripRepo.TotalEarningsDriver(ctx, driver_id)
+
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return earnings, (trips), nil
 }

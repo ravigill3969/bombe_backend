@@ -35,7 +35,6 @@ func (p *PaymentHandler) CreateCheckOutSession(w http.ResponseWriter, r *http.Re
 
 	riderId, ok := r.Context().Value(rider_middleware.ClaimsContextKey).(string)
 
-	fmt.Println("rideris", riderId)
 	if !ok {
 		fmt.Println("error: unauthorized rider context in CreateCheckOutSession")
 		utils.RespondWithError(w, "Unauthorized rider context", http.StatusUnauthorized)
@@ -43,8 +42,6 @@ func (p *PaymentHandler) CreateCheckOutSession(w http.ResponseWriter, r *http.Re
 	}
 	internalToken, err := utils.CreateToken(riderId, utils.RoleRider, 1*time.Minute, "payment-grpc-service")
 
-	fmt.Println("creating token error")
-	
 	if err != nil {
 		fmt.Println("error creating internal token for payment-grpc-service:", err)
 		utils.RespondWithError(w, "Internal server error", http.StatusInternalServerError)
@@ -139,6 +136,8 @@ func (p *PaymentHandler) StripeWebhook(w http.ResponseWriter, r *http.Request) {
 
 		rideData, err := extractRideMetadata(cs.Metadata)
 
+		paymentIntentId := cs.PaymentIntent.ID
+
 		internalToken, err := utils.CreateToken(rideData.RiderID, utils.RoleRider, 1*time.Minute, "payment-grpc-service")
 		if err != nil {
 			fmt.Println("error creating internal token for payment-grpc-service:", err)
@@ -174,6 +173,7 @@ func (p *PaymentHandler) StripeWebhook(w http.ResponseWriter, r *http.Request) {
 				DurationSeconds: rideData.DurationSeconds,
 				DistanceMetrs:   rideData.DistanceMeters,
 			},
+			PaymentIntentId: paymentIntentId,
 		})
 
 		if err != nil {
@@ -250,3 +250,4 @@ func extractRideMetadata(metadata map[string]string) (RideMetadata, error) {
 		DistanceMeters:  distanceMeters,
 	}, nil
 }
+

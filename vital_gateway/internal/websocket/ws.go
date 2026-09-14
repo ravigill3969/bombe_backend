@@ -66,7 +66,6 @@ func (ws *WSHandlerS) ReadIncomingMessages(
 ) {
 	for {
 		_, msg, err := conn.ReadMessage()
-		fmt.Println(string(msg))
 		
 		if err != nil {
 			fmt.Println("WebSocket read error:", err)
