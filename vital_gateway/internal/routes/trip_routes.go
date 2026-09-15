@@ -23,6 +23,8 @@ func (r *TripRoutes) Register() {
 	r.mux.HandleFunc("GET /api/trip/get-active-trip-with-driverid", driver_middleware.DriverAuthMiddleware(r.handler.GetTripWithDriverId))
 	r.mux.HandleFunc("GET /api/trip/get-active-trip-with-riderid", rider_middleware.RiderAuthMiddleware(r.handler.GetTripWithRiderId))
 
+	r.mux.HandleFunc("GET /api/trip/get-drivers-today-earnings", driver_middleware.DriverAuthMiddleware(r.handler.GetTodayEarnings))
+
 	r.mux.HandleFunc("POST /api/trip/cancel-active-trip-with-driverid", driver_middleware.DriverAuthMiddleware(r.handler.CancelTripDriver))
 	r.mux.HandleFunc("POST /api/trip/cancel-active-trip-with-riderid", rider_middleware.RiderAuthMiddleware(r.handler.CancelTripRider))
 	r.mux.HandleFunc("POST /api/trip/assign-driver", driver_middleware.DriverAuthMiddleware(r.handler.AssignTripToDriver))

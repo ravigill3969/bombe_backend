@@ -377,77 +377,77 @@ func (r *TripRepo) CompleteTrip(ctx context.Context, tripId string, driverId str
 
 	return nil
 }
-
-func (r *TripRepo) CancelTrip(
-	ctx context.Context,
-	tripID string,
-	reason string,
-	userID string,
-	isDriver bool,
-) (string, string, string, error) {
-
-	var query string
-
-	if isDriver {
-		query = `
-			UPDATE trip
-			SET
-				status = 'cancelled',
-				cancellation_reason = $2,
-				cancelled_at = NOW(),
-				updated_at = NOW()
-			WHERE trip_id = $1
-			  AND status IN ('assigned', 'pickedup')
-			  AND driver_id = $3
-			RETURNING payment_id, driver_id, rider_id
-		`
-	} else {
-		query = `
-			UPDATE trip
-			SET
-				status = 'cancelled',
-				cancellation_reason = $2,
-				cancelled_at = NOW(),
-				updated_at = NOW()
-			WHERE trip_id = $1
-			  AND status IN ('assigned', 'pickedup', 'searching')
-			  AND rider_id = $3
-			RETURNING payment_id, driver_id, rider_id
-		`
-	}
-
-	var paymentID string
-	var driverID sql.NullString
-	var riderID string
-
-	err := r.db.QueryRowContext(
-		ctx,
-		query,
-		tripID,
-		reason,
-		userID,
-	).Scan(
-		&paymentID,
-		&driverID,
-		&riderID,
-	)
-
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+	
+	func (r *TripRepo) CancelTrip(
+		ctx context.Context,
+		tripID string,
+		reason string,
+		userID string,
+		isDriver bool,
+	) (string, string, string, error) {
+	
+		var query string
+	
+		if isDriver {
+			query = `
+				UPDATE trip
+				SET
+					status = 'cancelled',
+					cancellation_reason = $2,
+					cancelled_at = NOW(),
+					updated_at = NOW()
+				WHERE trip_id = $1
+				  AND status IN ('assigned', 'picked')
+				  AND driver_id = $3
+				RETURNING payment_id, driver_id, rider_id
+			`
+		} else {
+			query = `
+				UPDATE trip
+				SET
+					status = 'cancelled',
+					cancellation_reason = $2,
+					cancelled_at = NOW(),
+					updated_at = NOW()
+				WHERE trip_id = $1
+				  AND status IN ('assigned', 'picked', 'searching' , 'requested')
+				  AND rider_id = $3
+				RETURNING payment_id, driver_id, rider_id
+			`
+		}
+	
+		var paymentID string
+		var driverID sql.NullString
+		var riderID string
+	
+		err := r.db.QueryRowContext(
+			ctx,
+			query,
+			tripID,
+			reason,
+			userID,
+		).Scan(
+			&paymentID,
+			&driverID,
+			&riderID,
+		)
+	
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return "", "", "", status.Error(
+					codes.FailedPrecondition,
+					"No trip found",
+				)
+			}
+	
 			return "", "", "", status.Error(
-				codes.FailedPrecondition,
-				"trip cannot be cancelled",
+				codes.Internal,
+				"failed to cancel trip",
 			)
 		}
-
-		return "", "", "", status.Error(
-			codes.Internal,
-			"failed to cancel trip",
-		)
+	
+		return paymentID, driverID.String, riderID, nil
 	}
-
-	return paymentID, driverID.String, riderID, nil
-}
 
 func (r *TripRepo) TotalEarningsDriver(
 	ctx context.Context,

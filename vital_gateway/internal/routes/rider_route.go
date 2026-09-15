@@ -22,8 +22,8 @@ func (r *RiderAuthRoutes) Register() {
 	r.mux.HandleFunc("POST /api/rider/register", r.handler.RegisterRider)
 	r.mux.HandleFunc("POST /api/rider/login", r.handler.LoginRider)
 	r.mux.HandleFunc("POST /api/rider/update-password", rider_middleware.RiderAuthMiddleware(r.handler.UpdatePassword))
+	r.mux.HandleFunc("POST /api/rider/logout", rider_middleware.RiderAuthMiddleware(r.handler.LogoutRider))
 
 	r.mux.HandleFunc("GET /api/rider/verify", rider_middleware.RiderAuthMiddleware(r.handler.GetRiderInfoo))
 
-	r.mux.HandleFunc("GET /api/rider/logout", rider_middleware.RiderAuthMiddleware(r.handler.LogoutRider))
 }

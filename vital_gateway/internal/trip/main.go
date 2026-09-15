@@ -8,6 +8,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
 )
 
 type TripHandler struct {
@@ -16,7 +18,11 @@ type TripHandler struct {
 	ws    *websocket.WSHandlerS
 }
 
-func NewTripHandler(redis *redis_handler.RedisHandler, sqs *awssqs.SQSQueue, ws *websocket.WSHandlerS) *TripHandler {
+func NewTripHandler(
+	redis *redis_handler.RedisHandler,
+	sqs *awssqs.SQSQueue,
+	ws *websocket.WSHandlerS,
+) *TripHandler {
 	return &TripHandler{
 		redis: redis,
 		sqs:   sqs,
@@ -35,8 +41,8 @@ func (t *TripHandler) ReadMessagesStoredInChannel() {
 		var wms WSMessage
 
 		if err := json.Unmarshal(msg, &wms); err != nil {
-			fmt.Println("error parsing json while reading from channel")
-
+			fmt.Println("error parsing json while reading from channel:", err)
+			continue
 		}
 
 		switch wms.Type {
@@ -50,67 +56,77 @@ func (t *TripHandler) ReadMessagesStoredInChannel() {
 				continue
 			}
 
-			err := t.redis.SetDriverOnline(context.Background(), data.DriverID, data.Latitude, data.Longitude)
+			err := t.redis.SetDriverOnline(
+				context.Background(),
+				data.DriverID,
+				data.Latitude,
+				data.Longitude,
+			)
 
 			if err != nil {
-				fmt.Println("Unable to set driver online", err)
+				fmt.Println("Unable to set driver online:", err)
 			}
 
 			if data.RiderID != "" && data.RideID != "" {
 
-				err = t.redis.RemoveDriver(context.Background(), data.DriverID)
+				err = t.redis.RemoveDriver(
+					context.Background(),
+					data.DriverID,
+				)
+
 				if err != nil {
-					fmt.Println("removing rider from redis error", err)
+					fmt.Println("removing driver from redis error:", err)
 				}
 
-				err = t.ws.SendToTargetUser(data.RiderID, socket_model.DataToSendTORiderFromDriver{
-					DriverID:  data.DriverID,
-					Type:      "ASSIGNED_DRIVER_LOCATION_UPDATE",
-					RiderID:   data.RiderID,
-					RideID:    data.RideID,
-					Latitude:  data.Latitude,
-					Longitude: data.Longitude,
-					Status:    data.Status,
-				})
+				err = t.ws.SendToTargetUser(
+					data.RiderID,
+					socket_model.DataToSendTORiderFromDriver{
+						DriverID:  data.DriverID,
+						Type:      "ASSIGNED_DRIVER_LOCATION_UPDATE",
+						RiderID:   data.RiderID,
+						RideID:    data.RideID,
+						Latitude:  data.Latitude,
+						Longitude: data.Longitude,
+						Status:    data.Status,
+					},
+				)
 
 				if err != nil {
-					fmt.Println("Unable to send data to rider", err)
+					fmt.Println("Unable to send data to rider:", err)
 				}
 			}
-		case "TRIP_CANCEL_BY_DRIVER":
-		case "TRIP_CANCEL_BY_RIDER":
-
-		case "DRIVER_MARKED_TRIP_AS_COMPLETE":
-
-		case "CHAT_MESSAGE_FROM_RIDER":
-
-		case "CHAT_MESSAGE_FROM_DRIVER":
 
 		default:
 			fmt.Println("message with no assigned type")
 			fmt.Println(string(msg))
 		}
-
 	}
-
 }
 
-// sending trip req to driver
+// sending trip request to drivers
 func (t *TripHandler) StartListeningToSQS() {
-	fmt.Println("start listeing sqs")
+
+	fmt.Println("start listening sqs")
+
 	for {
 
 		messages, err := t.sqs.ReceiveMessages(context.Background())
 
 		if err != nil {
-			fmt.Printf("error start sqs %s", err.Error())
+			fmt.Printf("error start sqs: %s\n", err.Error())
 			continue
 		}
 
 		for _, message := range messages {
+
 			if message.Body == nil {
 				continue
 			}
+
+			fmt.Printf(
+				"Message ID: %s\n",
+				aws.ToString(message.MessageId),
+			)
 
 			var data SQSDataFor
 
@@ -119,39 +135,70 @@ func (t *TripHandler) StartListeningToSQS() {
 				&data,
 			)
 
-			if err != nil {
+			fmt.Printf("Message ID: %s\n", aws.ToString(message.MessageId))
 
-				fmt.Println("error while parsing json for FOR ::", err)
+			fmt.Println("========== RAW SQS BODY ==========")
+			fmt.Println(*message.Body)
+			fmt.Println("==================================")
+
+			if err != nil {
+				fmt.Println(
+					"error while parsing json for FOR:",
+					err,
+				)
+				continue
 			}
 
 			switch data.For {
-			case "TRIP_CREATED":
-				{
-					var tripData SQSDataToMainServer
 
-					err := json.Unmarshal(
-						[]byte(*message.Body),
-						&tripData,
+			case "TRIP_CREATED":
+
+				var tripData SQSDataToMainServer
+
+				err := json.Unmarshal(
+					[]byte(*message.Body),
+					&tripData,
+				)
+
+				if err != nil {
+					fmt.Printf(
+						"invalid SQS message: %s\n",
+						err.Error(),
+					)
+					continue
+				}
+
+				if tripData.Aud != "MAIN_SERVER" {
+					continue
+				}
+
+				driverIDs, err := t.redis.FindDriversNearby(
+					context.Background(),
+					tripData.Pickup.Latitude,
+					tripData.Pickup.Longitude,
+					5,
+				)
+
+				if err != nil {
+					fmt.Println(
+						"error finding drivers:",
+						err,
+					)
+					continue
+				}
+
+				for _, driverID := range driverIDs {
+
+					fmt.Println(
+						"total drivers found:",
+						len(driverIDs),
+						"driver:",
+						driverID,
 					)
 
-					if err != nil {
-						fmt.Printf("invalid SQS message: %s", err.Error())
-						continue
-					}
-
-					if tripData.Aud != "MAIN_SERVER" {
-						continue
-					}
-
-					driver_ids, err := t.redis.FindDriversNearby(context.Background(), tripData.Pickup.Latitude, tripData.Pickup.Longitude, 5)
-
-					if err != nil {
-						fmt.Println("error finding drivers ", err)
-					}
-
-					for _, e := range driver_ids {
-						fmt.Println("totaldriversfound::", len(driver_ids), e)
-						t.ws.SendToTargetUser(e, TripReqToDriver{
+					err := t.ws.SendToTargetUser(
+						driverID,
+						TripReqToDriver{
 							Type:        "RIDE_REQUEST_TO_DRIVER",
 							DriverFare:  tripData.DriverFare,
 							RideDetails: tripData.RideDetails,
@@ -159,20 +206,41 @@ func (t *TripHandler) StartListeningToSQS() {
 							Dropoff:     tripData.Dropoff,
 							RiderID:     tripData.RiderID,
 							TripID:      tripData.TripID,
-						})
-					}
-
-					err = t.sqs.DeleteMessage(context.Background(), *message.ReceiptHandle)
+						},
+					)
 
 					if err != nil {
-						fmt.Println("error deleting message will try again: ", err)
+						fmt.Println(
+							"error sending trip request to driver:",
+							err,
+						)
 					}
 				}
+
+				if err := t.sqs.DeleteMessage(
+					context.Background(),
+					*message.ReceiptHandle,
+				); err != nil {
+					fmt.Println(
+						"error deleting message, will try again:",
+						err,
+					)
+				}
+
 			case "CANCEL_TRIP":
+
 				var tripData SQSTripCancelRequestToMain
-				err := json.Unmarshal([]byte(*message.Body), &tripData)
+
+				err := json.Unmarshal(
+					[]byte(*message.Body),
+					&tripData,
+				)
+
 				if err != nil {
-					fmt.Printf("invalid SQS message trip cancel: %s", err.Error())
+					fmt.Printf(
+						"invalid SQS message trip cancel: %s\n",
+						err.Error(),
+					)
 					continue
 				}
 
@@ -185,26 +253,57 @@ func (t *TripHandler) StartListeningToSQS() {
 				}
 
 				if tripData.IsCancelledByDriver {
+
+					// Driver cancelled -> notify rider
 					data.DriverOrRider = "rider"
-					err = t.ws.SendToTargetUser(tripData.RiderId, data)
+
+					err = t.ws.SendToTargetUser(
+						tripData.RiderId,
+						data,
+					)
+
 				} else {
+
+					// Rider cancelled -> notify driver
 					data.DriverOrRider = "driver"
-					err = t.ws.SendToTargetUser(tripData.DriverId, data)
+
+					err = t.ws.SendToTargetUser(
+						tripData.DriverId,
+						data,
+					)
 				}
 
 				if err != nil {
-					fmt.Println("error sending cancel trip message to user err ::", err)
+					fmt.Println(
+						"error sending cancel trip message to user:",
+						err,
+					)
 				}
 
-				if err := t.sqs.DeleteMessage(context.Background(), *message.ReceiptHandle); err != nil {
-					fmt.Println("error deleting cancel trip message: ", err)
+				if err := t.sqs.DeleteMessage(
+					context.Background(),
+					*message.ReceiptHandle,
+				); err != nil {
+					fmt.Println(
+						"error deleting cancel trip message:",
+						err,
+					)
 				}
 
 			case "TRIP_COMPLETE":
+
 				var tripData SQSTripCompletedRequestToMain
-				err := json.Unmarshal([]byte(*message.Body), &tripData)
+
+				err := json.Unmarshal(
+					[]byte(*message.Body),
+					&tripData,
+				)
+
 				if err != nil {
-					fmt.Printf("invalid SQS message trip complete: %s", err.Error())
+					fmt.Printf(
+						"invalid SQS message trip complete: %s\n",
+						err.Error(),
+					)
 					continue
 				}
 
@@ -214,17 +313,36 @@ func (t *TripHandler) StartListeningToSQS() {
 					DriverId: tripData.DriverId,
 					RiderId:  tripData.RiderId,
 				}
-				t.ws.SendToTargetUser(tripData.RiderId, data)
 
-				if err := t.sqs.DeleteMessage(context.Background(), *message.ReceiptHandle); err != nil {
-					fmt.Println("error deleting trip complete message: ", err)
+				if err := t.ws.SendToTargetUser(
+					tripData.RiderId,
+					data,
+				); err != nil {
+					fmt.Println(
+						"error sending trip complete message:",
+						err,
+					)
 				}
+
+				if err := t.sqs.DeleteMessage(
+					context.Background(),
+					*message.ReceiptHandle,
+				); err != nil {
+					fmt.Println(
+						"error deleting trip complete message:",
+						err,
+					)
+				}
+
 			default:
-				fmt.Println("wtf")
+
+				fmt.Println(
+					"unknown SQS message type:",
+					data.For,
+				)
+
 				continue
 			}
-
 		}
-
 	}
 }
