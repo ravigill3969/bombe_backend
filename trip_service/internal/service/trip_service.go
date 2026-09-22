@@ -150,6 +150,9 @@ func (t *TripService) RidePickedUpStatusUpdate(ctx context.Context, trip_id stri
 	if err != nil {
 		return err
 	}
+
+	t.sqsRepo.SendMessage(ctx, )
+	
 	return nil
 }
 
@@ -217,6 +220,7 @@ func (t *TripService) CancelTripService(ctx context.Context, trip_id string, isD
 
 func (t *TripService) TotalEarningsTodayService(ctx context.Context, driver_id string) (float32, int32, error) {
 	earnings, trips, err := t.tripRepo.TotalEarningsDriver(ctx, driver_id)
+
 
 	if err != nil {
 		return 0, 0, err

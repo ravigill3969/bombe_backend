@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"payment_service/internal/model"
 	"payment_service/proto/pb"
@@ -65,6 +66,10 @@ func (p *PaymentRepo) PaymentSuccessRepo(
 	params model.PaymentSuccessParams,
 	userID string,
 ) (string, error) {
+
+	fmt.Println("payment intetn", params.PaymentIntentId)
+	fmt.Println("userId", userID)
+	fmt.Println("tempRiderID", params.TempRideId)
 
 	query := `
 		UPDATE payment

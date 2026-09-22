@@ -176,8 +176,10 @@ func (t *TripHandler) StartListeningToSQS() {
 					context.Background(),
 					tripData.Pickup.Latitude,
 					tripData.Pickup.Longitude,
-					5,
+					20,
 				)
+
+				fmt.Println("drivers found: ", len(driverIDs))
 
 				if err != nil {
 					fmt.Println(
@@ -334,12 +336,16 @@ func (t *TripHandler) StartListeningToSQS() {
 					)
 				}
 
+			case "RIDER_PICKED" : 
+			
+
 			default:
 
 				fmt.Println(
 					"unknown SQS message type:",
 					data.For,
 				)
+
 
 				continue
 			}

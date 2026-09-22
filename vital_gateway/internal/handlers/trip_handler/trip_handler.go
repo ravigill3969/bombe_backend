@@ -376,5 +376,10 @@ func (t *TripHandler) GetTodayEarnings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.RespondWithSuccess(w, "Success", http.StatusCreated, grpcResp)
+	res := map[string]any{
+		"total_earning_today": grpcResp.GetTotalEarningToday(),
+		"total_trips_today" : grpcResp.GetTotalTripsToday(),
+	}
+
+	utils.RespondWithSuccess(w, "Success", http.StatusCreated, res)
 }

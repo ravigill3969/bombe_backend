@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"trip_service/internal/middleware"
 	"trip_service/internal/model"
 	"trip_service/internal/service"
@@ -106,6 +107,8 @@ func (t *TripServer) RiderPickedUp(ctx context.Context, req *pb.RiderPickedUpReq
 	if err != nil {
 		return nil, err
 	}
+
+	
 
 	return &pb.RiderPickedUpResponse{
 		Message:   "Rider picked up",
@@ -230,6 +233,7 @@ func (t *TripServer) TotalEarningToday(
 
 	earnings, trips, err := t.tripService.TotalEarningsTodayService(ctx, driverID)
 
+	fmt.Println(earnings, trips)
 	if err != nil {
 		return nil, err
 	}

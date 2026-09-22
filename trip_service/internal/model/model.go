@@ -114,3 +114,7 @@ type SQSTripCompletedRequestToMain struct {
 	For                 string `json:"for"`
 	TripId              string `json:"trip_id"`
 }
+
+type RiderPickedRequestToMain struct{
+	
+}
