@@ -151,7 +151,7 @@ func (t *TripService) RidePickedUpStatusUpdate(ctx context.Context, trip_id stri
 		return err
 	}
 
-	t.sqsRepo.SendMessage(ctx, )
+	// t.sqsRepo.SendMessage(ctx, )
 	
 	return nil
 }
